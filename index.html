@@ -319,36 +319,40 @@ const sndDull = () => { blip(280, 0.07, 0.06, "sine"); };
    旋律に聞こえる要素（音程のある電子音）は入れない。ノイズ系のクリックだけを、
    回転に合わせて間隔を詰めながら並べ、最後に止まる「カチッ」で締める。 */
 function sndRatchet() {
-  let t = 0, gap = 46;
-  const n = 14;
+  /* 実機（M3）の巻き上げは、シャッターよりずっと小さく、間隔も少し不揃い。
+     参考動画の実測に合わせて、クリックを小さくし、間隔に不揃いを入れた。 */
+  let t = 0, gap = 48;
+  const n = 13, jit = [1, 0.85, 1.12, 0.95, 1.05, 0.9, 1.08, 0.95, 1, 0.88, 1.1, 0.95, 1];
   for (let i = 0; i < n; i++) {
     const tt = t, f = 2300 + (i % 3) * 140;
-    setTimeout(() => noiseHit(0, 0.014, f, 0.045), tt);
-    t += gap; gap = Math.max(22, gap * 0.93);
+    setTimeout(() => noiseHit(0, 0.014, f, 0.032), tt);
+    t += gap * jit[i]; gap = Math.max(24, gap * 0.94);
   }
-  setTimeout(() => noiseHit(0, 0.03, 1700, 0.085), t + 18);
+  setTimeout(() => noiseHit(0, 0.03, 1700, 0.06), t + 18);
 }
 /* M3仕様のシャッター音：短く静かで上品な「チャッ」。
-   「ドン」の原因になる低域〜200-400Hzの胴鳴りを出さないよう、布の音は
-   850Hzのハイパスで下を切り、高めの柔らかい成分だけを残す。
-   芯は1.3kHz帯の小さなクリック。全体を短く。 */
+   参考動画（LEICA M3 シャッター音）の実測：エネルギーの重心は約4.4kHz、
+   4kHz以上が約半分、850Hz未満は約5%だけ。バーストは約30msと短い。
+   「ドン」の原因になる低域〜200-400Hzの胴鳴りを出さないよう下は900Hzで切り、
+   上は切らずに実機の明るさを残す。芯は小さなクリック。後幕は実測どおり少し強め。 */
 function clothHit(when, dur, gain) {
   const ac = audio(); if (!ac) return;
   const src = ac.createBufferSource(); src.buffer = noiseBuf;
-  const hp = ac.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 850; hp.Q.value = 0.5;
-  const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 3400; lp.Q.value = 0.4;
+  const hp = ac.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 900; hp.Q.value = 0.5;
+  const bp = ac.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 3400; bp.Q.value = 0.5;
+  const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 9000; lp.Q.value = 0.4;
   const g = ac.createGain(), t0 = ac.currentTime + when;
   g.gain.setValueAtTime(0, t0);
-  g.gain.linearRampToValueAtTime(gain, t0 + 0.006);
+  g.gain.linearRampToValueAtTime(gain, t0 + 0.005);
   g.gain.exponentialRampToValueAtTime(0.0008, t0 + dur);
-  src.connect(hp); hp.connect(lp); lp.connect(g); g.connect(ac.destination);
+  src.connect(hp); hp.connect(bp); bp.connect(lp); lp.connect(g); g.connect(ac.destination);
   src.start(t0); src.stop(t0 + dur + 0.05);
 }
 function sndShutter(t) {
-  clothHit(0, 0.06, 0.11);
-  blip(1350, 0.025, 0.05);
+  clothHit(0, 0.032, 0.10);
+  blip(1900, 0.016, 0.035);
   const d = t == null ? 0.45 : Math.min(Math.max(t, 0.05), 0.8);
-  setTimeout(() => clothHit(0, 0.045, 0.045), d * 1000);
+  setTimeout(() => clothHit(0, 0.028, 0.12), d * 1000);
 }
 
 /* ================= ヒント表示 ================= */
