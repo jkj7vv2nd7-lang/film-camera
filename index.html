@@ -307,11 +307,27 @@ function noiseHit(when, dur, freq, gain) {
 const sndClick = () => { blip(1320, 0.045, 0.10); noiseHit(0, 0.03, 2600, 0.05); };
 const sndDull = () => { blip(280, 0.07, 0.06, "sine"); };
 function sndRatchet() { for (let i = 0; i < 7; i++) setTimeout(() => blip(1500 - i * 60, 0.03, 0.07), i * 42); }
+/* M3仕様のシャッター音：短く静かで上品な「チャッ」。
+   柔らかい布の音（高域を落とす）＋小さなスピーカーでも聞こえる小さなクリックの芯。
+   後幕は控えめに（引きずる「シュッ」を抑える）。 */
+function clothHit(when, dur, freq, gain) {
+  const ac = audio(); if (!ac) return;
+  const src = ac.createBufferSource(); src.buffer = noiseBuf;
+  const bp = ac.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = freq; bp.Q.value = 0.7;
+  const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = freq * 2.2; lp.Q.value = 0.4;
+  const g = ac.createGain(), t0 = ac.currentTime + when;
+  g.gain.setValueAtTime(0, t0);
+  g.gain.linearRampToValueAtTime(gain, t0 + 0.008);
+  g.gain.exponentialRampToValueAtTime(0.0008, t0 + dur);
+  src.connect(bp); bp.connect(lp); lp.connect(g); g.connect(ac.destination);
+  src.start(t0); src.stop(t0 + dur + 0.05);
+}
 function sndShutter(t) {
-  noiseHit(0, 0.10, 750, 0.20);
-  blip(170, 0.09, 0.10, "sine");
+  clothHit(0, 0.085, 640, 0.13);
+  blip(1350, 0.028, 0.045);
+  blip(165, 0.07, 0.06, "sine");
   const d = t == null ? 0.45 : Math.min(Math.max(t, 0.05), 0.8);
-  setTimeout(() => { noiseHit(0, 0.09, 620, 0.16); blip(150, 0.08, 0.08, "sine"); }, d * 1000);
+  setTimeout(() => { clothHit(0, 0.06, 520, 0.05); }, d * 1000);
 }
 
 /* ================= ヒント表示 ================= */
@@ -530,7 +546,7 @@ setInterval(meterTick, 200);
 /* テスト用フック */
 window.__fc = {
   state, SPEEDS, APS, DISTS, meterCalc,
-  setShutter: i => setShutter(i, true), wind, fire,
+  setShutter: i => setShutter(i, true), wind, fire, sndShutter,
   setLumOverride: v => { state.lumOverride = v; },
 };
 </script>
