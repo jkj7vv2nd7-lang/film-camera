@@ -170,6 +170,36 @@ input[type=range]{width:100%;height:44px;accent-color:var(--red);cursor:pointer}
 .film-card .fc-meta{font-size:.72rem;color:var(--dim);padding:2px 10px 0;line-height:1.5}
 .film-card.sel{border-color:var(--red);box-shadow:0 0 0 1.5px var(--red)}
 .film-card:active{transform:translateY(1px)}
+
+/* ===== 現像室（第3期） ===== */
+.darkroom{margin-top:14px;border-radius:18px;padding:14px 12px 16px;background:linear-gradient(180deg,#1a1a1e,#121215);
+  box-shadow:0 10px 30px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.06);border:1px solid #000}
+.dr-title{font-family:Georgia,serif;font-size:1.25rem;letter-spacing:.14em;color:var(--ink);text-align:center}
+.dr-sub{font-size:.76rem;color:var(--dim);text-align:center;margin-top:4px;line-height:1.6}
+.dr-empty{text-align:center;color:var(--dim);font-size:.88rem;padding:16px 0 6px;line-height:1.8}
+.roll-card{display:flex;align-items:center;gap:10px;width:100%;margin-top:10px;text-align:left;border-radius:10px;border:1px solid #3c3c42;
+  background:linear-gradient(180deg,#2e2e33,#222226);color:var(--ink);padding:10px 12px;cursor:pointer;min-height:56px}
+.roll-card:active{transform:translateY(1px)}
+.roll-card .rc-band{flex:0 0 auto;width:12px;align-self:stretch;border-radius:6px}
+.roll-card .rc-name{font-family:Georgia,serif;font-size:1.02rem}
+.roll-card .rc-meta{font-size:.74rem;color:var(--dim);margin-top:2px}
+.roll-card .rc-go{margin-left:auto;color:var(--amber);font-size:.85rem;white-space:nowrap}
+.roll-del{display:block;margin:6px 0 0 auto;border:none;background:none;color:#77777f;font-size:.74rem;cursor:pointer;padding:6px 4px;text-decoration:underline}
+.sheet-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.ghost-btn.small{width:auto;margin-top:0;min-height:44px;padding:0 14px;font-size:.85rem}
+#sheet-title{font-family:Georgia,serif;font-size:1.05rem;color:var(--ink)}
+.strip{background:#0b0b0d;border:1px solid #26262b;border-radius:8px;padding:8px 10px 10px;margin-top:10px;overflow-x:auto}
+.perf{height:13px;background-image:radial-gradient(circle,#3d3d44 3px,transparent 3.6px);background-size:22px 13px;background-position:4px center;background-repeat:repeat-x}
+.edge-print{font-family:"Courier New",monospace;font-size:.6rem;letter-spacing:.32em;color:#e8a33a;white-space:nowrap;padding:3px 2px 5px}
+.frames{display:flex;gap:8px}
+.frame{flex:0 0 auto;background:none;border:none;padding:0;cursor:pointer;text-align:center}
+.frame img{display:block;height:96px;width:auto;border-radius:2px;background:#1c1c1f}
+.frame figcaption{font-family:"Courier New",monospace;font-size:.62rem;color:#c8c8ce;margin-top:3px;letter-spacing:.08em}
+#frame-view{margin-top:14px;background:#0b0b0d;border:1px solid #26262b;border-radius:10px;padding:12px}
+#frame-img{display:block;max-width:100%;height:auto;margin:0 auto;border-radius:3px}
+#frame-info{font-size:.8rem;color:var(--dim);text-align:center;margin-top:8px;line-height:1.7}
+a.ghost-btn{display:block;text-align:center;text-decoration:none;line-height:50px}
+.dr-note{font-size:.72rem;color:#6d6d74;text-align:center;margin-top:8px;line-height:1.7}
 </style>
 </head>
 <body>
@@ -291,7 +321,7 @@ input[type=range]{width:100%;height:44px;accent-color:var(--red);cursor:pointer}
     </div>
   </div>
 
-  <p class="foot">第2期：フィルム装填と撮影、フィルムシミュレーションまで。現像（コンタクトシート）は第3期で入ります。<br>音はすべて端末の中で合成しています（外部ファイルなし）。</p>
+  <p class="foot">フィルムを入れて、露出を合わせて、巻き上げて撮る。現像するまで写りは分からない――フィルムカメラの不便さごと楽しむカメラです。<br>音はすべて端末の中で合成しています（外部ファイルなし）。</p>
 </div>
 
 <!-- 背面・底蓋 -->
@@ -318,6 +348,27 @@ input[type=range]{width:100%;height:44px;accent-color:var(--red);cursor:pointer}
         <button type="button" data-frames="36" class="sel">36<small>枚撮り</small></button>
       </div>
       <button id="btn-load" type="button" class="big-btn">このフィルムを装填する</button>
+    </div>
+  </div>
+</div>
+
+<!-- 現像室 -->
+<div class="darkroom" id="darkroom">
+  <div class="dr-title">現 像 室</div>
+  <div class="dr-sub">撮り切るか、巻き戻して取り出したロールだけが現像できます。<br>撮影中のフィルムは、ここにも出てきません。</div>
+  <div id="roll-list"></div>
+  <div id="sheet-wrap" hidden>
+    <div class="sheet-head">
+      <button type="button" class="ghost-btn small" id="btn-sheet-back">← ロール一覧へ</button>
+      <div id="sheet-title"></div>
+    </div>
+    <div id="sheet"></div>
+    <div id="frame-view" hidden>
+      <img id="frame-img" alt="現像した写真">
+      <div id="frame-info"></div>
+      <button type="button" class="big-btn" id="btn-share">共有して保存する</button>
+      <a class="ghost-btn" id="btn-download" href="#" download>ダウンロード（パソコン向け）</a>
+      <div class="dr-note">iPhoneでは「共有して保存する」から「画像を保存」で写真に入ります。上の画像を長押しして保存することもできます。</div>
     </div>
   </div>
 </div>
@@ -725,6 +776,34 @@ const PhotoDB = {
       rq.onerror = () => res(null);
     });
   },
+  async allMeta() {
+    const db = await this.open();
+    return new Promise(res => {
+      const out = [];
+      const rq = db.transaction("photos").objectStore("photos").openCursor();
+      rq.onsuccess = () => { const cur = rq.result; if (cur) { const v = cur.value; out.push({ id: cur.key, rollId: v.rollId, filmId: v.filmId, frame: v.frame, ts: v.ts }); cur.continue(); } else res(out); };
+      rq.onerror = () => res(out);
+    });
+  },
+  async photosOfRoll(rollId) {
+    const db = await this.open();
+    return new Promise(res => {
+      const out = [];
+      const rq = db.transaction("photos").objectStore("photos").openCursor();
+      rq.onsuccess = () => { const cur = rq.result; if (cur) { if (cur.value.rollId === rollId) out.push(cur.value); cur.continue(); } else { out.sort((a, b) => a.frame - b.frame); res(out); } };
+      rq.onerror = () => res(out);
+    });
+  },
+  async deleteRoll(rollId) {
+    const db = await this.open();
+    return new Promise(res => {
+      const tx = db.transaction("photos", "readwrite");
+      const rq = tx.objectStore("photos").openCursor();
+      rq.onsuccess = () => { const cur = rq.result; if (cur) { if (cur.value.rollId === rollId) cur.delete(); cur.continue(); } };
+      tx.oncomplete = () => res(true);
+      tx.onerror = () => res(false);
+    });
+  },
 };
 
 /* ---- フィルムシミュレーション ---- */
@@ -823,7 +902,7 @@ function updateFilmUI() {
     $("counter").textContent = String(F.frameNo).padStart(3, "0");
   } else if (F.stage === "finished") {
     $("memo-film").textContent = film.name + "（撮り切り）";
-    $("memo-sub").textContent = "底蓋を開けて取り出してください（現像は第3期で入ります）";
+    $("memo-sub").textContent = "現像室で見られます。取り出しは底蓋を開けて";
     $("counter").textContent = String(F.frames).padStart(3, "0");
   }
   $("lock-cap").textContent = coverOpenFlag ? "底蓋ロック：OPEN" : "底蓋ロック：CLOSE";
@@ -851,7 +930,8 @@ function removeFilm() {
   saveFilmState();
   $("drawer").hidden = true;
   renderChamber(); updateFilmUI();
-  hint("フィルムを取り出しました。撮った写真は端末に残っています（現像は第3期）");
+  renderRolls();
+  hint("フィルムを取り出しました。撮った写真は現像室で見られます");
 }
 function doLoadFilm() {
   const film = filmOf(selFilmId);
@@ -922,7 +1002,7 @@ window.__film = {
     }
     capturePhoto();
     F.exposed++; F.pendingAdvance = true;
-    if (F.exposed >= F.frames) { F.stage = "finished"; hint("撮り切りました。底蓋を開けて取り出してください（現像は第3期で入ります）"); }
+    if (F.exposed >= F.frames) { F.stage = "finished"; hint("撮り切りました。現像室で見られます（取り出しは底蓋から）"); renderRolls(); }
     saveFilmState(); updateFilmUI();
     return true;
   },
@@ -931,6 +1011,139 @@ window.__film = {
 buildDrawer();
 updateFilmUI();
 if (filmState.stage !== "none" && filmState.id) { /* 装填状態の復元 */ updateFilmUI(); }
+
+/* ================= 第3期：現像室（コンタクトシート） =================
+   設計原則：撮り切るか、巻き戻して取り出したロールだけが見られる。
+   撮影中（装填中）のロールは一覧にも出さない。 */
+let sheetUrls = [], frameUrl = null, currentFrameRec = null, currentRollPhotos = [];
+function revokeSheetUrls() { for (const u of sheetUrls) URL.revokeObjectURL(u); sheetUrls = []; if (frameUrl) { URL.revokeObjectURL(frameUrl); frameUrl = null; } }
+async function renderRolls() {
+  const list = $("roll-list");
+  let metas = [];
+  try { metas = await PhotoDB.allMeta(); } catch (e) {}
+  const byRoll = new Map();
+  for (const m of metas) { if (!byRoll.has(m.rollId)) byRoll.set(m.rollId, []); byRoll.get(m.rollId).push(m); }
+  const rolls = [];
+  for (const [rollId, arr] of byRoll) {
+    const isActive = rollId === filmState.rollId;
+    if (isActive && filmState.stage !== "finished") continue; /* 撮影中は見せない */
+    arr.sort((a, b) => a.frame - b.frame);
+    rolls.push({ rollId, filmId: arr[0].filmId, count: arr.length, ts: Math.max.apply(null, arr.map(a => a.ts)), current: isActive });
+  }
+  rolls.sort((a, b) => b.ts - a.ts);
+  list.innerHTML = "";
+  if (!rolls.length) {
+    list.innerHTML = '<div class="dr-empty">現像できるロールはまだありません。<br>1本撮り切るか、巻き戻して取り出すと、ここに現れます。</div>';
+    return;
+  }
+  for (const r of rolls) {
+    const film = filmOf(r.filmId);
+    const d = new Date(r.ts);
+    const card = document.createElement("button");
+    card.type = "button"; card.className = "roll-card"; card.dataset.roll = r.rollId;
+    card.innerHTML = '<span class="rc-band" style="background:' + film.color + '"></span><span><span class="rc-name">' + film.name + '</span><div class="rc-meta">' + r.count + "枚 ・ " + (d.getMonth() + 1) + "月" + d.getDate() + "日" + (r.current ? " ・ 撮り切り（装填中）" : "") + '</div></span><span class="rc-go">現像する →</span>';
+    card.addEventListener("click", () => { sndClick(); openSheet(r.rollId); });
+    list.appendChild(card);
+    const del = document.createElement("button");
+    del.type = "button"; del.className = "roll-del"; del.textContent = "このロールを消す";
+    del.addEventListener("click", async () => {
+      if (!confirm(film.name + " の " + r.count + "枚を消しますか？（元に戻せません）")) return;
+      await PhotoDB.deleteRoll(r.rollId);
+      $("sheet-wrap").hidden = true;
+      renderRolls();
+    });
+    list.appendChild(del);
+  }
+}
+async function thumbUrl(blob, maxW) {
+  try {
+    const bmp = await createImageBitmap(blob);
+    const sc = Math.min(1, maxW / bmp.width);
+    const c = document.createElement("canvas");
+    c.width = Math.max(2, Math.round(bmp.width * sc)); c.height = Math.max(2, Math.round(bmp.height * sc));
+    c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+    bmp.close && bmp.close();
+    const b = await new Promise(res => c.toBlob(res, "image/jpeg", 0.8));
+    if (b) { const u = URL.createObjectURL(b); sheetUrls.push(u); return u; }
+  } catch (e) {}
+  const u = URL.createObjectURL(blob); sheetUrls.push(u); return u;
+}
+async function openSheet(rollId) {
+  revokeSheetUrls();
+  currentRollPhotos = await PhotoDB.photosOfRoll(rollId);
+  if (!currentRollPhotos.length) { renderRolls(); return; }
+  const film = filmOf(currentRollPhotos[0].filmId);
+  $("sheet-title").textContent = film.name + "（" + currentRollPhotos.length + "枚）";
+  $("frame-view").hidden = true;
+  const sheet = $("sheet");
+  sheet.innerHTML = "";
+  for (let s = 0; s < currentRollPhotos.length; s += 6) {
+    const group = currentRollPhotos.slice(s, s + 6);
+    const strip = document.createElement("div");
+    strip.className = "strip";
+    const edge = document.createElement("div");
+    edge.className = "edge-print";
+    edge.textContent = "◂ " + film.name.toUpperCase() + " ▸ " + film.name.toUpperCase() + " ◂";
+    const frames = document.createElement("div");
+    frames.className = "frames";
+    for (const rec of group) {
+      const fig = document.createElement("button");
+      fig.type = "button"; fig.className = "frame"; fig.dataset.frame = rec.frame;
+      const img = document.createElement("img");
+      img.alt = rec.frame + "コマ目";
+      img.src = await thumbUrl(rec.blob, 384);
+      const cap = document.createElement("figcaption");
+      cap.textContent = rec.frame + "A";
+      fig.appendChild(img); fig.appendChild(cap);
+      fig.addEventListener("click", () => { sndClick(); showFrame(rec); });
+      frames.appendChild(fig);
+    }
+    const perfT = document.createElement("div"); perfT.className = "perf";
+    const perfB = document.createElement("div"); perfB.className = "perf";
+    strip.appendChild(perfT); strip.appendChild(edge); strip.appendChild(frames); strip.appendChild(perfB);
+    sheet.appendChild(strip);
+  }
+  $("sheet-wrap").hidden = false;
+  $("sheet-wrap").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+function frameFileName(rec) {
+  const film = filmOf(rec.filmId);
+  return (film.name + "-" + String(rec.frame).padStart(2, "0") + ".jpg").replace(/[^\w.\-]+/g, "_");
+}
+function showFrame(rec) {
+  currentFrameRec = rec;
+  if (frameUrl) URL.revokeObjectURL(frameUrl);
+  frameUrl = URL.createObjectURL(rec.blob);
+  $("frame-img").src = frameUrl;
+  const film = filmOf(rec.filmId);
+  const d = new Date(rec.ts);
+  $("frame-info").textContent = film.name + " ・ " + rec.frame + "コマ目 ・ " + rec.ss + " ・ f/" + rec.ap + " ・ ISO " + rec.iso + " ・ " + (d.getMonth() + 1) + "月" + d.getDate() + "日 " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+  const dl = $("btn-download");
+  dl.href = frameUrl;
+  dl.setAttribute("download", frameFileName(rec));
+  $("frame-view").hidden = false;
+  $("frame-view").scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+$("btn-sheet-back").addEventListener("click", () => {
+  sndClick();
+  revokeSheetUrls();
+  $("sheet-wrap").hidden = true;
+  renderRolls();
+});
+$("btn-share").addEventListener("click", async () => {
+  const rec = currentFrameRec;
+  if (!rec) return;
+  const file = new File([rec.blob], frameFileName(rec), { type: "image/jpeg" });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file] }); } catch (e) {}
+  } else {
+    hint("この端末では共有が使えませんでした。画像を長押しして保存してください");
+  }
+});
+renderRolls();
+
+/* テスト用フック（第3期） */
+window.__fc3 = { renderRolls, openSheet, showFrame: rec => showFrame(rec) };
 
 /* テスト用フック（第2期） */
 window.__fc2 = {
