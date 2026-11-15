@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>フィルムカメラ ― M6×バルナック風 完全手動カメラ</title>
+<meta name="theme-color" content="#141416">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<style>
+:root{
+  --ink:#ececec; --dim:#9a9aa0; --red:#d21f30; --amber:#ffb340; --led:#ff453a;
+  --panel:#232327; --metal:#3a3a40; --line:#101012;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:#0c0c0e;color:var(--ink);font-family:-apple-system,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif}
+body{padding:10px 10px 28px}
+#app{max-width:560px;margin:0 auto}
+h1{position:absolute;left:-9999px}
+
+/* ===== カメラボディ ===== */
+.body-panel{
+  border-radius:18px;padding:12px 12px 16px;
+  background:
+    radial-gradient(circle at 25% 30%, rgba(255,255,255,.05) 0 1px, transparent 1.6px) 0 0/7px 7px,
+    radial-gradient(circle at 70% 65%, rgba(0,0,0,.35) 0 1px, transparent 1.6px) 3px 3px/7px 7px,
+    linear-gradient(180deg,#2b2b30,#1d1d20);
+  box-shadow:0 10px 30px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.08), inset 0 -2px 6px rgba(0,0,0,.7);
+  border:1px solid #000;
+}
+.top-plate{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:8px;
+  background:linear-gradient(180deg,#43434a,#2c2c31);
+  border-radius:12px;padding:10px 12px;margin:-2px -2px 12px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18), inset 0 -3px 6px rgba(0,0,0,.55);
+}
+.brand{text-align:center;padding-top:4px;min-width:96px}
+.brand .dot{display:inline-block;width:17px;height:17px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ff6b78,var(--red) 60%,#8f1220);box-shadow:0 1px 3px rgba(0,0,0,.6);vertical-align:-3px;margin-right:6px}
+.brand .name{font-family:Georgia,"Times New Roman",serif;font-size:1.55rem;letter-spacing:.14em;color:#f2f2f2;text-shadow:0 1px 0 #000,0 0 6px rgba(0,0,0,.4)}
+.brand .sub{font-size:.62rem;letter-spacing:.34em;color:#c9c9ce;margin-top:2px}
+.engrave{color:#d8d8dc;text-shadow:0 1px 0 #000;font-family:Georgia,serif}
+
+/* シャッターダイヤル */
+.dial-col{text-align:center;width:104px}
+#dial{position:relative;width:92px;height:92px;margin:0 auto;border-radius:50%;cursor:pointer;touch-action:none;
+  background:conic-gradient(from 210deg,#55555c,#2e2e33 25%,#55555c 50%,#2e2e33 75%,#55555c);
+  box-shadow:0 4px 10px rgba(0,0,0,.65), inset 0 2px 3px rgba(255,255,255,.25), inset 0 -4px 8px rgba(0,0,0,.6)}
+#dial .rotor{position:absolute;inset:0;border-radius:50%;transition:transform .07s}
+#dial .tick{position:absolute;left:50%;top:50%;width:2px;height:9px;background:#d9d9de;transform-origin:50% 0;border-radius:1px}
+#dial .tick.major{height:13px;width:3px;background:#fff}
+#dial .hub{position:absolute;inset:26px;border-radius:50%;background:radial-gradient(circle at 40% 32%,#4c4c53,#26262b 70%);box-shadow:inset 0 1px 2px rgba(255,255,255,.25),0 1px 3px rgba(0,0,0,.6)}
+#dial .pointer{position:absolute;left:50%;top:-4px;transform:translateX(-50%);width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:10px solid var(--red);z-index:2}
+.dial-label{font-size:.68rem;color:var(--dim);letter-spacing:.18em;margin-top:6px}
+#ss-read{font-family:Georgia,serif;font-size:1.3rem;color:#fff;min-height:1.5em}
+#ss-read small{font-size:.72rem;color:var(--amber)}
+
+/* 巻き上げ・シャッター・カウンター */
+.wind-col{text-align:center;width:118px}
+#counter{font-family:Georgia,serif;font-size:1.05rem;background:#101012;color:var(--amber);border-radius:6px;padding:2px 0 3px;box-shadow:inset 0 2px 5px #000;letter-spacing:.2em}
+.wind-row{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+#btn-wind{position:relative;width:56px;height:40px;border:none;background:transparent;cursor:pointer;padding:0}
+#btn-wind .lever{position:absolute;left:2px;top:14px;width:52px;height:12px;border-radius:6px;background:linear-gradient(180deg,#5a5a62,#333338);box-shadow:0 2px 5px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.3);transform-origin:7px 6px;transition:transform .12s}
+#btn-wind.wound .lever{transform:rotate(-38deg)}
+#btn-wind .post{position:absolute;left:0;top:11px;width:16px;height:16px;border-radius:50%;background:radial-gradient(circle at 40% 32%,#55555c,#26262b 72%);box-shadow:0 1px 3px rgba(0,0,0,.6)}
+#btn-shutter{width:46px;height:46px;border-radius:50%;border:none;cursor:pointer;
+  background:radial-gradient(circle at 38% 30%,#6a6a72,#333338 68%);box-shadow:0 4px 9px rgba(0,0,0,.65), inset 0 2px 3px rgba(255,255,255,.35)}
+#btn-shutter:active{transform:translateY(2px)}
+#btn-shutter .hole{display:block;width:12px;height:12px;margin:0 auto;border-radius:50%;background:#141416;box-shadow:inset 0 1px 3px #000}
+.wind-label{font-size:.68rem;color:var(--dim);letter-spacing:.14em;margin-top:6px}
+#charge-state{font-size:.72rem;color:var(--amber);min-height:1.1em}
+
+/* ===== ファインダー ===== */
+#finder-area{position:relative;margin-top:2px}
+.vf{position:relative;background:#000;border-radius:10px;overflow:hidden;box-shadow:inset 0 0 0 2px #000, inset 0 0 34px rgba(0,0,0,.9);aspect-ratio:4/3}
+.vf video.scene{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.vf .vig{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 58%,rgba(0,0,0,.5) 100%)}
+.frame-line{position:absolute;border:2px solid rgba(255,236,160,.9);box-shadow:0 0 6px rgba(255,220,120,.35), inset 0 0 6px rgba(255,220,120,.2);pointer-events:none;opacity:.22}
+.frame-line.sel{opacity:1}
+.frame-line.f35{inset:5%}
+.frame-line.f50{inset:15%}
+.frame-line.f90{inset:29%}
+.frame-tag{position:absolute;right:6px;bottom:4px;font-size:.66rem;color:rgba(255,236,160,.95);font-family:Georgia,serif;letter-spacing:.08em}
+#rf-patch{position:absolute;left:50%;top:50%;width:36%;height:32%;transform:translate(-50%,-50%);overflow:hidden;border:1.5px solid rgba(255,255,255,.4);box-shadow:inset 0 0 18px rgba(0,0,0,.45);pointer-events:none}
+#rf-patch video{position:absolute;top:0;left:-32%;width:164%;height:100%;object-fit:cover;opacity:.6;filter:brightness(1.25) saturate(1.1)}
+.blackout{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .03s}
+.blackout.on{opacity:1}
+.led-bar{position:absolute;left:0;right:0;bottom:8px;display:flex;justify-content:center;align-items:center;gap:20px;pointer-events:none}
+.led{font-size:1.35rem;color:rgba(255,255,255,.14);line-height:1}
+.led.on{color:var(--led);text-shadow:0 0 10px rgba(255,69,58,.95),0 0 22px rgba(255,69,58,.6)}
+.led-cap{position:absolute;left:0;right:0;bottom:-2px;text-align:center;font-size:.58rem;color:rgba(255,255,255,.4);letter-spacing:.3em}
+
+/* バルナック二重窓 */
+#vf-barnack{display:none;gap:8px}
+#vf-barnack.show{display:flex}
+.b-win{position:relative;background:#000;border-radius:10px;overflow:hidden;box-shadow:inset 0 0 0 2px #000, inset 0 0 22px rgba(0,0,0,.9);height:158px}
+.b-win.rf{flex:1.15}
+.b-win.vf2{flex:1}
+.b-win video.scene{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.b-win video.ghost{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.55;filter:brightness(1.3) saturate(1.1)}
+.b-tag{position:absolute;left:6px;top:4px;font-size:.62rem;color:rgba(255,255,255,.75);letter-spacing:.14em;text-shadow:0 1px 2px #000;z-index:3}
+.b-win .led-bar{bottom:5px}
+#vf-m6.hide{display:none}
+
+.note{font-size:.78rem;color:var(--dim);line-height:1.55;margin:9px 2px 0}
+.note b{color:#cfcfd4}
+
+/* ===== 操作パネル ===== */
+.ctl{margin-top:14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:10px 12px 12px}
+.ctl h2{font-size:.74rem;letter-spacing:.22em;color:var(--dim);margin:0 0 8px;font-weight:600}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{flex:1;min-width:52px;min-height:48px;border-radius:9px;border:1px solid #3c3c42;background:linear-gradient(180deg,#333338,#242428);color:var(--ink);font-size:1rem;cursor:pointer;padding:6px 2px}
+.seg button small{display:block;font-size:.62rem;color:var(--dim);letter-spacing:.06em}
+.seg button.sel{background:linear-gradient(180deg,#5a2027,#3d1218);border-color:var(--red);color:#fff}
+.seg button.sel small{color:#f0b9be}
+.seg button:active{transform:translateY(1px)}
+.ctl .val{font-family:Georgia,serif;color:var(--amber)}
+input[type=range]{width:100%;height:44px;accent-color:var(--red);cursor:pointer}
+.focus-scale{display:flex;justify-content:space-between;font-size:.68rem;color:var(--dim);font-family:Georgia,serif;margin-top:-6px}
+#meter-read{font-size:.8rem;color:var(--dim);font-family:Georgia,serif;letter-spacing:.04em}
+#meter-read b{color:var(--ink)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:480px){.two{grid-template-columns:1fr}}
+
+#landscape-hint{display:none;margin:0 0 10px;background:#3d1218;border:1px solid var(--red);color:#ffd9dc;border-radius:10px;padding:9px 12px;font-size:.85rem;align-items:center;justify-content:space-between;gap:8px}
+#landscape-hint button{background:transparent;border:1px solid #a04;color:#ffd9dc;border-radius:7px;min-height:36px;padding:2px 12px;cursor:pointer}
+@media (orientation:portrait){#landscape-hint.show{display:flex}}
+#cam-msg{display:none;margin-top:12px;background:#2c2410;border:1px solid #8a6d1f;color:#ffe1a8;border-radius:10px;padding:11px 13px;font-size:.86rem;line-height:1.6}
+#cam-msg.show{display:block}
+#cam-msg button{margin-top:8px;min-height:44px;padding:6px 16px;border-radius:8px;border:1px solid #8a6d1f;background:#3a2f12;color:#ffe1a8;font-size:.9rem;cursor:pointer}
+#hint{font-size:.8rem;color:var(--amber);min-height:1.2em;margin-top:10px;text-align:center}
+.foot{font-size:.7rem;color:#6d6d74;text-align:center;margin-top:16px;line-height:1.7}
+</style>
+</head>
+<body>
+<div id="app">
+<h1>フィルムカメラ</h1>
+
+<div id="landscape-hint"><span>横向きにすると、ファインダーが広く使えます</span><button id="btn-hint-x" type="button">閉じる</button></div>
+
+<div class="body-panel">
+  <div class="top-plate">
+    <div class="dial-col">
+      <div id="dial" role="slider" aria-label="シャッター速度">
+        <div class="pointer"></div>
+        <div class="rotor" id="dial-rotor"></div>
+        <div class="hub"></div>
+      </div>
+      <div class="dial-label">SHUTTER</div>
+      <div id="ss-read">1/125</div>
+    </div>
+    <div class="brand">
+      <div><span class="dot"></span><span class="name">M6</span></div>
+      <div class="sub">FILM CAMERA</div>
+      <div class="engrave" style="font-size:.66rem;margin-top:8px;letter-spacing:.2em">MADE FOR FILM LOVERS</div>
+    </div>
+    <div class="wind-col">
+      <div id="counter">000</div>
+      <div class="wind-row">
+        <button id="btn-wind" type="button" aria-label="巻き上げレバー"><span class="post"></span><span class="lever"></span></button>
+        <button id="btn-shutter" type="button" aria-label="シャッターボタン"><span class="hole"></span></button>
+      </div>
+      <div class="wind-label">WIND&nbsp;&nbsp;·&nbsp;&nbsp;SHUTTER</div>
+      <div id="charge-state">巻き上げてください</div>
+    </div>
+  </div>
+
+  <!-- M6ファインダー -->
+  <div id="finder-area">
+    <div class="vf" id="vf-m6">
+      <video class="scene" id="v-m6" playsinline muted autoplay></video>
+      <div class="vig"></div>
+      <div class="frame-line f35" data-f="35"><span class="frame-tag">35</span></div>
+      <div class="frame-line f50 sel" data-f="50"><span class="frame-tag">50</span></div>
+      <div class="frame-line f90" data-f="90"><span class="frame-tag">90</span></div>
+      <div id="rf-patch"><video id="v-patch" playsinline muted autoplay></video></div>
+      <div class="led-bar">
+        <span class="led" id="led-under">◀</span><span class="led" id="led-ok">●</span><span class="led" id="led-over">▶</span>
+      </div>
+      <div class="blackout" id="bo-m6"></div>
+    </div>
+
+    <!-- バルナック二重窓 -->
+    <div id="vf-barnack">
+      <div class="b-win rf">
+        <video class="scene" id="v-br" playsinline muted autoplay></video>
+        <video class="ghost" id="v-br-ghost" playsinline muted autoplay></video>
+        <span class="b-tag">距離計</span>
+        <div class="blackout" id="bo-b1"></div>
+      </div>
+      <div class="b-win vf2">
+        <video class="scene" id="v-bv" playsinline muted autoplay></video>
+        <span class="b-tag">構図</span>
+        <div class="led-bar">
+          <span class="led" id="led-under2">◀</span><span class="led" id="led-ok2">●</span><span class="led" id="led-over2">▶</span>
+        </div>
+        <div class="blackout" id="bo-b2"></div>
+      </div>
+    </div>
+  </div>
+
+  <p class="note">中央の<b>二重像は演出です</b>。実際のピントは、裏で動いているカメラの自動焦点が合わせます。露出は、ファインダー下のLED（◀ 不足 ／ ● 適正 ／ ▶ 過多）が頼りです。</p>
+
+  <div id="cam-msg"></div>
+  <div id="hint"></div>
+
+  <div class="ctl">
+    <h2>ファインダー方式</h2>
+    <div class="seg" id="mode-row">
+      <button type="button" data-mode="m6" class="sel">M6式<small>ブライトフレーム</small></button>
+      <button type="button" data-mode="barnack">バルナック式<small>二重窓</small></button>
+    </div>
+  </div>
+
+  <div class="two">
+    <div class="ctl">
+      <h2>レンズ（枠）</h2>
+      <div class="seg" id="focal-row">
+        <button type="button" data-focal="35">35<small>mm</small></button>
+        <button type="button" data-focal="50" class="sel">50<small>mm</small></button>
+        <button type="button" data-focal="90">90<small>mm</small></button>
+      </div>
+    </div>
+    <div class="ctl">
+      <h2>絞り（仮想）</h2>
+      <div class="seg" id="ap-row"></div>
+    </div>
+  </div>
+
+  <div class="ctl">
+    <h2>フォーカス（演出）　<span class="val" id="focus-read">2 m</span></h2>
+    <input type="range" id="focus-range" min="0" max="10" step="1" value="6" aria-label="フォーカス距離">
+    <div class="focus-scale"><span>0.7m</span><span>1</span><span>1.5</span><span>2</span><span>3</span><span>5</span><span>10</span><span>∞</span></div>
+  </div>
+
+  <div class="two">
+    <div class="ctl">
+      <h2>ISO（第1期の確認用）</h2>
+      <div class="seg" id="iso-row"></div>
+    </div>
+    <div class="ctl">
+      <h2>測光</h2>
+      <div id="meter-read">カメラ起動中…</div>
+    </div>
+  </div>
+
+  <p class="foot">第1期：ボディとファインダー、露出計まで。フィルム装填と撮影は第2期で入ります。<br>音はすべて端末の中で合成しています（外部ファイルなし）。</p>
+</div>
+</div>
+<script>
+"use strict";
+/* ================= 状態 ================= */
+const SPEEDS = [
+  { label: "B", t: null }, { label: "1", t: 1 }, { label: "2", t: 1/2 }, { label: "4", t: 1/4 },
+  { label: "8", t: 1/8 }, { label: "15", t: 1/15 }, { label: "30", t: 1/30 }, { label: "60", t: 1/60 },
+  { label: "125", t: 1/125 }, { label: "250", t: 1/250 }, { label: "500", t: 1/500 }, { label: "1000", t: 1/1000 },
+];
+const APS = [1.4, 2, 2.8, 4, 5.6, 8, 11, 16];
+const ISOS = [100, 200, 400, 800, 1600, 3200];
+const DISTS = [0.7, 0.8, 0.9, 1, 1.2, 1.5, 2, 3, 5, 10, Infinity];
+const state = {
+  ssIdx: 8, apIdx: 3, focusIdx: 6, focal: 50, mode: "m6", iso: 400,
+  charged: false, count: 0, lum: 0.4, lumOverride: null, camOk: false, led: "ok",
+};
+try {
+  const s = JSON.parse(localStorage.getItem("filmcam-v1") || "null");
+  if (s) { for (const k of ["ssIdx","apIdx","focusIdx","focal","mode","iso"]) if (s[k] !== undefined) state[k] = s[k]; }
+} catch (e) {}
+function save() {
+  try { localStorage.setItem("filmcam-v1", JSON.stringify({ ssIdx: state.ssIdx, apIdx: state.apIdx, focusIdx: state.focusIdx, focal: state.focal, mode: state.mode, iso: state.iso })); } catch (e) {}
+}
+const $ = id => document.getElementById(id);
+
+/* ================= 音（Web Audio合成） ================= */
+let AC = null, noiseBuf = null;
+function audio() {
+  if (!AC) {
+    try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; }
+    if (AC) {
+      noiseBuf = AC.createBuffer(1, AC.sampleRate * 1, AC.sampleRate);
+      const d = noiseBuf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+  }
+  if (AC && AC.state === "suspended") AC.resume();
+  return AC;
+}
+function blip(freq, dur, gain, type) {
+  const ac = audio(); if (!ac) return;
+  const o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime;
+  o.type = type || "square"; o.frequency.value = freq;
+  g.gain.setValueAtTime(gain, t);
+  g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
+  o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + dur + 0.02);
+}
+function noiseHit(when, dur, freq, gain) {
+  const ac = audio(); if (!ac) return;
+  const src = ac.createBufferSource(); src.buffer = noiseBuf;
+  const f = ac.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = freq; f.Q.value = 0.9;
+  const g = ac.createGain(), t = ac.currentTime + when;
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(gain, t + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
+  src.connect(f); f.connect(g); g.connect(ac.destination);
+  src.start(t); src.stop(t + dur + 0.05);
+}
+const sndClick = () => { blip(1320, 0.045, 0.10); noiseHit(0, 0.03, 2600, 0.05); };
+const sndDull = () => { blip(280, 0.07, 0.06, "sine"); };
+function sndRatchet() { for (let i = 0; i < 7; i++) setTimeout(() => blip(1500 - i * 60, 0.03, 0.07), i * 42); }
+function sndShutter(t) {
+  noiseHit(0, 0.10, 750, 0.20);
+  blip(170, 0.09, 0.10, "sine");
+  const d = t == null ? 0.45 : Math.min(Math.max(t, 0.05), 0.8);
+  setTimeout(() => { noiseHit(0, 0.09, 620, 0.16); blip(150, 0.08, 0.08, "sine"); }, d * 1000);
+}
+
+/* ================= ヒント表示 ================= */
+let hintTimer = null;
+function hint(msg) {
+  $("hint").textContent = msg;
+  clearTimeout(hintTimer);
+  hintTimer = setTimeout(() => { $("hint").textContent = ""; }, 2800);
+}
+
+/* ================= シャッターダイヤル ================= */
+const ARC = 300, STEP = ARC / (SPEEDS.length - 1);
+const rotor = $("dial-rotor");
+(function buildTicks() {
+  const cx = 46, cy = 46, r = 39;
+  SPEEDS.forEach((s, i) => {
+    const a = (-150 + i * STEP) * Math.PI / 180;
+    const el = document.createElement("span");
+    el.className = "tick" + (i % 3 === 0 ? " major" : "");
+    el.style.left = (cx + r * Math.sin(a) - 1.5) + "px";
+    el.style.top = (cy - r * Math.cos(a) - 4) + "px";
+    el.style.transform = `rotate(${-150 + i * STEP}deg)`;
+    rotor.appendChild(el);
+  });
+})();
+function ssLabel() {
+  const s = SPEEDS[state.ssIdx];
+  return s.t === null ? "B" : (s.t >= 1 ? "1″" : "1/" + s.label);
+}
+function renderShutter() {
+  rotor.style.transform = `rotate(${150 - state.ssIdx * STEP}deg)`;
+  $("ss-read").innerHTML = ssLabel() + (SPEEDS[state.ssIdx].t === null ? " <small>バルブ</small>" : "");
+}
+function setShutter(i, silent) {
+  const n = Math.max(0, Math.min(SPEEDS.length - 1, i));
+  if (n !== state.ssIdx) { state.ssIdx = n; if (!silent) sndClick(); renderShutter(); save(); }
+}
+(function dialPointer() {
+  const dial = $("dial");
+  let drag = null;
+  const angOf = e => {
+    const r = dial.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    return { a: Math.atan2(e.clientX - cx, -(e.clientY - cy)) * 180 / Math.PI, cx, x: e.clientX };
+  };
+  dial.addEventListener("pointerdown", e => {
+    const p = angOf(e);
+    drag = { startA: p.a, startIdx: state.ssIdx, moved: 0, cx: p.cx, x0: e.clientX, y0: e.clientY };
+    e.preventDefault();
+  });
+  window.addEventListener("pointermove", e => {
+    if (!drag) return;
+    drag.moved = Math.max(drag.moved, Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0));
+    let d = angOf(e).a - drag.startA;
+    if (d > 180) d -= 360; if (d < -180) d += 360;
+    setShutter(Math.round(drag.startIdx + d / STEP));
+  });
+  window.addEventListener("pointerup", e => {
+    if (!drag) return;
+    if (drag.moved < 7) setShutter(state.ssIdx + (e.clientX < drag.cx ? -1 : 1));
+    drag = null;
+  });
+})();
+
+/* ================= 巻き上げとシャッター ================= */
+function wind() {
+  if (state.charged) { sndDull(); hint("もう巻き上げてあります"); return; }
+  sndRatchet();
+  const b = $("btn-wind");
+  b.classList.add("wound");
+  setTimeout(() => b.classList.remove("wound"), 420);
+  state.charged = true;
+  $("charge-state").textContent = "シャッターが切れます";
+}
+function fire() {
+  if (!state.charged) { sndDull(); hint("巻き上げレバーを引いてからシャッターを切ってください"); return; }
+  state.charged = false;
+  state.count++;
+  $("counter").textContent = String(state.count).padStart(3, "0");
+  $("charge-state").textContent = "巻き上げてください";
+  const t = SPEEDS[state.ssIdx].t;
+  sndShutter(t);
+  const dur = t === null ? 500 : Math.min(Math.max(t * 1000, 90), 1000);
+  for (const id of ["bo-m6", "bo-b1", "bo-b2"]) { const el = $(id); el.classList.add("on"); setTimeout(() => el.classList.remove("on"), dur); }
+}
+$("btn-wind").addEventListener("click", wind);
+$("btn-shutter").addEventListener("click", fire);
+
+/* ================= セグメント類 ================= */
+function segWire(rowId, attr, fn) {
+  $(rowId).addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    fn(b.dataset[attr], b);
+    sndClick();
+  });
+}
+function segSelect(rowId, attr, val) {
+  for (const b of $(rowId).querySelectorAll("button")) b.classList.toggle("sel", b.dataset[attr] === String(val));
+}
+segWire("mode-row", "mode", v => {
+  state.mode = v; segSelect("mode-row", "mode", v);
+  $("vf-m6").classList.toggle("hide", v !== "m6");
+  $("vf-barnack").classList.toggle("show", v === "barnack");
+  save();
+});
+segWire("focal-row", "focal", v => {
+  state.focal = Number(v); segSelect("focal-row", "focal", v);
+  for (const f of document.querySelectorAll(".frame-line")) f.classList.toggle("sel", Number(f.dataset.f) === state.focal);
+  save();
+});
+(function buildApIso() {
+  const ap = $("ap-row");
+  APS.forEach((v, i) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.dataset.ap = i; b.innerHTML = "f/" + v;
+    ap.appendChild(b);
+  });
+  const iso = $("iso-row");
+  ISOS.forEach(v => {
+    const b = document.createElement("button");
+    b.type = "button"; b.dataset.iso = v; b.textContent = v;
+    iso.appendChild(b);
+  });
+})();
+segWire("ap-row", "ap", v => { state.apIdx = Number(v); segSelect("ap-row", "ap", v); save(); });
+segWire("iso-row", "iso", v => { state.iso = Number(v); segSelect("iso-row", "iso", v); save(); });
+
+/* ================= フォーカス ================= */
+function renderFocus() {
+  const d = DISTS[state.focusIdx];
+  $("focus-read").textContent = d === Infinity ? "∞" : d + " m";
+  const inv = d === Infinity ? 0 : 1 / d;
+  const dx = Math.max(-48, Math.min(48, (inv - 0.5) * 90));
+  $("v-patch").style.transform = `translateX(${dx}px)`;
+  $("v-br-ghost").style.transform = `translateX(${dx * 0.6}px)`;
+}
+$("focus-range").addEventListener("input", e => { state.focusIdx = Number(e.target.value); renderFocus(); save(); });
+
+/* ================= カメラと測光 ================= */
+const sample = document.createElement("canvas"); sample.width = 32; sample.height = 18;
+const sctx = sample.getContext("2d", { willReadFrequently: true });
+let stream = null;
+async function startCamera() {
+  const msg = $("cam-msg");
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    msg.innerHTML = "この環境ではカメラを使えません（HTTPSのページで開いてください）。操作の確認だけできます。";
+    msg.classList.add("show"); return;
+  }
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1440 } }, audio: false,
+    });
+    for (const id of ["v-m6", "v-patch", "v-br", "v-br-ghost", "v-bv"]) {
+      const v = $(id); v.srcObject = stream; v.play().catch(() => {});
+    }
+    state.camOk = true;
+    msg.classList.remove("show");
+  } catch (e) {
+    msg.innerHTML = "カメラを起動できませんでした（" + (e && e.name ? e.name : "エラー") + "）。ブラウザのサイト設定でカメラを許可してから、もう一度お試しください。<br><button type=\"button\" id=\"btn-cam-retry\">カメラを再試行</button>";
+    msg.classList.add("show");
+    const r = $("btn-cam-retry");
+    if (r) r.addEventListener("click", startCamera);
+  }
+}
+function meterCalc() {
+  const lum = state.lumOverride !== null ? state.lumOverride : state.lum;
+  const ev100 = Math.log2(Math.max(lum, 0.004)) + 10.3;
+  const reqEV = ev100 + Math.log2(state.iso / 100);
+  const t = SPEEDS[state.ssIdx].t, tEff = t === null ? 1 : t;
+  const setEV = Math.log2(Math.pow(APS[state.apIdx], 2) / tEff);
+  const diff = setEV - reqEV;
+  return { lum, ev100, reqEV, setEV, diff, led: diff > 0.5 ? "under" : (diff < -0.5 ? "over" : "ok") };
+}
+function meterTick() {
+  const v = $("v-m6");
+  if (state.camOk && v.readyState >= 2 && !document.hidden) {
+    try {
+      sctx.drawImage(v, 0, 0, 32, 18);
+      const d = sctx.getImageData(0, 0, 32, 18).data;
+      let sum = 0;
+      for (let i = 0; i < d.length; i += 4) sum += 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+      state.lum += ((sum / (d.length / 4)) / 255 - state.lum) * 0.35;
+    } catch (e) {}
+  }
+  const m = meterCalc();
+  state.led = m.led;
+  for (const [id, key] of [["led-under","under"],["led-ok","ok"],["led-over","over"],["led-under2","under"],["led-ok2","ok"],["led-over2","over"]]) {
+    const el = $(id); if (el) el.classList.toggle("on", m.led === key);
+  }
+  $("meter-read").innerHTML = state.camOk
+    ? `被写体 EV <b>${m.reqEV.toFixed(1)}</b>（ISO ${state.iso}）／ 設定 EV <b>${m.setEV.toFixed(1)}</b>`
+    : "カメラ未起動（LEDは目安表示）";
+}
+setInterval(meterTick, 200);
+
+/* ================= 初期化 ================= */
+(function init() {
+  renderShutter();
+  segSelect("mode-row", "mode", state.mode);
+  $("vf-m6").classList.toggle("hide", state.mode !== "m6");
+  $("vf-barnack").classList.toggle("show", state.mode === "barnack");
+  segSelect("focal-row", "focal", state.focal);
+  for (const f of document.querySelectorAll(".frame-line")) f.classList.toggle("sel", Number(f.dataset.f) === state.focal);
+  segSelect("ap-row", "ap", state.apIdx);
+  segSelect("iso-row", "iso", state.iso);
+  $("focus-range").value = state.focusIdx;
+  renderFocus();
+  if (!localStorage.getItem("filmcam-hint-x")) $("landscape-hint").classList.add("show");
+  $("btn-hint-x").addEventListener("click", () => {
+    $("landscape-hint").classList.remove("show");
+    try { localStorage.setItem("filmcam-hint-x", "1"); } catch (e) {}
+  });
+  startCamera();
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+})();
+
+/* テスト用フック */
+window.__fc = {
+  state, SPEEDS, APS, DISTS, meterCalc,
+  setShutter: i => setShutter(i, true), wind, fire,
+  setLumOverride: v => { state.lumOverride = v; },
+};
+</script>
+</body>
+</html>
