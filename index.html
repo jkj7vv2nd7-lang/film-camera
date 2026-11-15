@@ -130,6 +130,46 @@ input[type=range]{width:100%;height:44px;accent-color:var(--red);cursor:pointer}
 #cam-msg button{margin-top:8px;min-height:44px;padding:6px 16px;border-radius:8px;border:1px solid #8a6d1f;background:#3a2f12;color:#ffe1a8;font-size:.9rem;cursor:pointer}
 #hint{font-size:.8rem;color:var(--amber);min-height:1.2em;margin-top:10px;text-align:center}
 .foot{font-size:.7rem;color:#6d6d74;text-align:center;margin-top:16px;line-height:1.7}
+
+/* ===== 背面・底蓋（第2期） ===== */
+.back-panel{margin-top:14px;border-radius:18px;padding:14px 12px 16px;
+  background:
+    radial-gradient(circle at 25% 30%, rgba(255,255,255,.05) 0 1px, transparent 1.6px) 0 0/7px 7px,
+    radial-gradient(circle at 70% 65%, rgba(0,0,0,.35) 0 1px, transparent 1.6px) 3px 3px/7px 7px,
+    linear-gradient(180deg,#2b2b30,#1d1d20);
+  box-shadow:0 10px 30px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.08), inset 0 -2px 6px rgba(0,0,0,.7);
+  border:1px solid #000}
+.memo-wrap{text-align:center}
+.memo-label{font-size:.62rem;letter-spacing:.34em;color:var(--dim)}
+.memo{display:inline-block;margin-top:5px;min-width:250px;max-width:100%;padding:9px 18px;border-radius:6px;
+  background:linear-gradient(180deg,#101012,#17171a);border:2px solid #4a4a52;box-shadow:inset 0 2px 7px #000, 0 1px 0 rgba(255,255,255,.07);
+  font-family:Georgia,"Times New Roman",serif;font-size:1.12rem;color:#f0e6c8;letter-spacing:.06em}
+.memo-sub{font-size:.78rem;color:var(--dim);margin-top:6px;min-height:1.2em}
+.lock-row{display:flex;align-items:center;gap:14px;margin-top:14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:10px 14px}
+#btn-lock{flex:0 0 auto;width:62px;height:62px;border-radius:50%;border:none;cursor:pointer;position:relative;
+  background:radial-gradient(circle at 38% 30%,#5c5c64,#2a2a2f 72%);box-shadow:0 4px 9px rgba(0,0,0,.6), inset 0 2px 3px rgba(255,255,255,.3)}
+#btn-lock .key{position:absolute;left:50%;top:50%;width:8px;height:34px;margin:-17px 0 0 -4px;border-radius:4px;background:linear-gradient(180deg,#d8d8de,#8f8f96);box-shadow:0 1px 2px rgba(0,0,0,.6);transition:transform .25s}
+#btn-lock.open .key{transform:rotate(90deg)}
+#btn-lock:active{transform:translateY(1px)}
+.lock-cap{font-family:Georgia,serif;font-size:1rem;color:var(--ink);letter-spacing:.1em}
+.lock-help{font-size:.74rem;color:var(--dim);margin-top:3px}
+#chamber{margin-top:12px;background:#0a0a0c;border:1px solid #333;border-radius:12px;padding:14px 12px;box-shadow:inset 0 3px 12px #000}
+.chamber-empty{text-align:center;color:var(--dim);font-size:.9rem;padding:8px 0 2px}
+.cart{margin:0 auto;max-width:340px;border-radius:12px;padding:12px 14px;text-align:center;color:#141416;box-shadow:0 4px 10px rgba(0,0,0,.55)}
+.cart .cart-name{font-family:Georgia,serif;font-size:1.2rem;font-weight:bold;letter-spacing:.04em}
+.cart .cart-sub{font-size:.78rem;margin-top:2px}
+.big-btn{display:block;width:100%;margin-top:12px;min-height:54px;border-radius:10px;border:1px solid var(--red);background:linear-gradient(180deg,#5a2027,#3d1218);color:#fff;font-size:1.02rem;cursor:pointer}
+.big-btn:active{transform:translateY(1px)}
+.ghost-btn{display:block;width:100%;margin-top:10px;min-height:50px;border-radius:10px;border:1px solid #3c3c42;background:linear-gradient(180deg,#333338,#242428);color:var(--ink);font-size:.95rem;cursor:pointer}
+.drawer-title{font-size:.8rem;letter-spacing:.18em;color:var(--dim);margin:2px 0 10px}
+.film-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media (max-width:480px){.film-grid{grid-template-columns:1fr}}
+.film-card{text-align:left;border-radius:10px;border:1px solid #3c3c42;background:linear-gradient(180deg,#2e2e33,#222226);color:var(--ink);padding:0 0 10px;cursor:pointer;overflow:hidden;min-height:86px}
+.film-card .band{height:14px}
+.film-card .fc-name{font-family:Georgia,serif;font-size:1.02rem;padding:7px 10px 0}
+.film-card .fc-meta{font-size:.72rem;color:var(--dim);padding:2px 10px 0;line-height:1.5}
+.film-card.sel{border-color:var(--red);box-shadow:0 0 0 1.5px var(--red)}
+.film-card:active{transform:translateY(1px)}
 </style>
 </head>
 <body>
@@ -251,7 +291,35 @@ input[type=range]{width:100%;height:44px;accent-color:var(--red);cursor:pointer}
     </div>
   </div>
 
-  <p class="foot">第1期：ボディとファインダー、露出計まで。フィルム装填と撮影は第2期で入ります。<br>音はすべて端末の中で合成しています（外部ファイルなし）。</p>
+  <p class="foot">第2期：フィルム装填と撮影、フィルムシミュレーションまで。現像（コンタクトシート）は第3期で入ります。<br>音はすべて端末の中で合成しています（外部ファイルなし）。</p>
+</div>
+
+<!-- 背面・底蓋 -->
+<div class="back-panel">
+  <div class="memo-wrap">
+    <div class="memo-label">MEMO HOLDER</div>
+    <div class="memo" id="memo-film">フィルム未装填</div>
+    <div class="memo-sub" id="memo-sub">底蓋を開けてフィルムを入れてください</div>
+  </div>
+  <div class="lock-row">
+    <button id="btn-lock" type="button" aria-label="底蓋ロックキー"><span class="key"></span></button>
+    <div>
+      <div class="lock-cap" id="lock-cap">底蓋ロック：CLOSE</div>
+      <div class="lock-help">丸いキーを押すと、底蓋が開閉します</div>
+    </div>
+  </div>
+  <div id="chamber" hidden>
+    <div id="chamber-inner"></div>
+    <div id="drawer" hidden>
+      <div class="drawer-title">フィルムを選んでください</div>
+      <div class="film-grid" id="film-grid"></div>
+      <div class="seg" id="frames-row" style="margin-top:10px">
+        <button type="button" data-frames="24">24<small>枚撮り</small></button>
+        <button type="button" data-frames="36" class="sel">36<small>枚撮り</small></button>
+      </div>
+      <button id="btn-load" type="button" class="big-btn">このフィルムを装填する</button>
+    </div>
+  </div>
 </div>
 </div>
 <script>
@@ -418,6 +486,8 @@ function setShutter(i, silent) {
 
 /* ================= 巻き上げとシャッター ================= */
 function wind() {
+  if (window.__film && window.__film.coverOpen()) { sndDull(); hint("底蓋が開いています"); return; }
+  if (window.__film && window.__film.finished()) { sndDull(); hint("フィルムを撮り切りました。底蓋を開けて取り出してください"); return; }
   if (state.charged) { sndDull(); hint("もう巻き上げてあります"); return; }
   sndRatchet();
   const b = $("btn-wind");
@@ -425,17 +495,20 @@ function wind() {
   setTimeout(() => b.classList.remove("wound"), 420);
   state.charged = true;
   $("charge-state").textContent = "シャッターが切れます";
+  if (window.__film) window.__film.onWind();
 }
 function fire() {
+  if (window.__film && window.__film.coverOpen()) { sndDull(); hint("底蓋が開いています。閉めてからシャッターを切ってください"); return; }
   if (!state.charged) { sndDull(); hint("巻き上げレバーを引いてからシャッターを切ってください"); return; }
   state.charged = false;
-  state.count++;
-  $("counter").textContent = String(state.count).padStart(3, "0");
   $("charge-state").textContent = "巻き上げてください";
   const t = SPEEDS[state.ssIdx].t;
   sndShutter(t);
   const dur = t === null ? 500 : Math.min(Math.max(t * 1000, 90), 1000);
   for (const id of ["bo-m6", "bo-b1", "bo-b2"]) { const el = $(id); el.classList.add("on"); setTimeout(() => el.classList.remove("on"), dur); }
+  if (window.__film && window.__film.onFire()) return;
+  state.count++;
+  $("counter").textContent = String(state.count).padStart(3, "0");
 }
 $("btn-wind").addEventListener("click", wind);
 $("btn-shutter").addEventListener("click", fire);
@@ -586,6 +659,285 @@ window.__fc = {
   state, SPEEDS, APS, DISTS, meterCalc, setCal,
   setShutter: i => setShutter(i, true), wind, fire, sndShutter,
   setLumOverride: v => { state.lumOverride = v; },
+};
+</script>
+<script>
+"use strict";
+/* ================= 第2期：フィルム装填・撮影・シミュレーション ================= */
+const FILMS = [
+  { id: "clean", name: "Digital Clean", sub: "無加工", iso: 400, kind: "カラー", color: "#8a8f98", text: "#141416", trait: "フィルムの味付けなし、そのままの写り", sim: { sat: 1, con: 1, lift: 0, rk: 1, gk: 1, bk: 1, gamma: 1, grain: 0, hal: 0, bw: false, vig: 0 } },
+  { id: "portra400", name: "Portra 400", sub: "カラーネガ", iso: 400, kind: "カラーネガ", color: "#c8a24a", text: "#141416", trait: "柔らかい階調と穏やかな色。人を撮るのに向く", sim: { sat: 0.88, con: 0.95, lift: 6, rk: 1.03, gk: 1.0, bk: 0.96, gamma: 1, grain: 0.16, hal: 0, bw: false, vig: 0.06 } },
+  { id: "cinestill800t", name: "Cinestill 800T", sub: "カラーネガ（映画用）", iso: 800, kind: "カラーネガ", color: "#3a4a7a", text: "#f2f2f2", trait: "タングステンの青みと、光がにじむハレーション", sim: { sat: 0.98, con: 1.02, lift: 4, rk: 0.96, gk: 1.0, bk: 1.10, gamma: 1, grain: 0.30, hal: 0.9, bw: false, vig: 0.08 } },
+  { id: "natura1600", name: "Natura 1600", sub: "カラーネガ（高感度）", iso: 1600, kind: "カラーネガ", color: "#4a7a4f", text: "#f2f2f2", trait: "暗い場所に強い。粒子はしっかり出る", sim: { sat: 0.92, con: 0.97, lift: 8, rk: 1.01, gk: 1.0, bk: 0.99, gamma: 1, grain: 0.55, hal: 0, bw: false, vig: 0.08 } },
+  { id: "venus800", name: "Superia Venus 800", sub: "カラーネガ", iso: 800, kind: "カラーネガ", color: "#7a4a8a", text: "#f2f2f2", trait: "鮮やかな発色、緑がきれい", sim: { sat: 1.16, con: 1.03, lift: 3, rk: 1.0, gk: 1.03, bk: 0.98, gamma: 1, grain: 0.34, hal: 0, bw: false, vig: 0.06 } },
+  { id: "gyomuyo100", name: "業務用 100", sub: "カラーネガ", iso: 100, kind: "カラーネガ", color: "#e8e8e8", text: "#141416", trait: "素直な色と細かい粒子。晴れた日に", sim: { sat: 1.0, con: 1.0, lift: 2, rk: 1.01, gk: 1.0, bk: 0.99, gamma: 1, grain: 0.08, hal: 0, bw: false, vig: 0.04 } },
+  { id: "kodachrome64", name: "Kodachrome 64", sub: "リバーサル", iso: 64, kind: "リバーサル", color: "#d8b13a", text: "#141416", trait: "深く濃い色と締まった黒。スライドの写り", sim: { sat: 1.24, con: 1.14, lift: -4, rk: 1.05, gk: 0.99, bk: 0.94, gamma: 1.05, grain: 0.12, hal: 0, bw: false, vig: 0.12 } },
+  { id: "trix400", name: "Tri-X 400", sub: "白黒", iso: 400, kind: "白黒", color: "#e8c33a", text: "#141416", trait: "粒子の立つ力強い白黒", sim: { sat: 0, con: 1.10, lift: 2, rk: 1, gk: 1, bk: 1, gamma: 1, grain: 0.5, hal: 0, bw: true, vig: 0.1 } },
+  { id: "neopan400", name: "Neopan 400 Presto", sub: "白黒", iso: 400, kind: "白黒", color: "#3a3a3f", text: "#f2f2f2", trait: "きめ細かい粒子と締まった黒の白黒", sim: { sat: 0, con: 1.06, lift: 0, rk: 1, gk: 1, bk: 1, gamma: 1, grain: 0.28, hal: 0, bw: true, vig: 0.08 } },
+];
+const filmOf = id => FILMS.find(f => f.id === id) || FILMS[0];
+
+let filmState = { id: null, frames: 36, exposed: 0, frameNo: 0, blanks: 0, stage: "none", rollId: null, pendingAdvance: false };
+try {
+  const s = JSON.parse(localStorage.getItem("filmcam-film-v1") || "null");
+  if (s && s.stage) filmState = Object.assign(filmState, s);
+} catch (e) {}
+function saveFilmState() { try { localStorage.setItem("filmcam-film-v1", JSON.stringify(filmState)); } catch (e) {} }
+let coverOpenFlag = false;
+let selFilmId = null, selFrames = 36;
+
+/* ---- 写真の保存（IndexedDB） ---- */
+const PhotoDB = {
+  dbp: null,
+  open() {
+    if (this.dbp) return this.dbp;
+    this.dbp = new Promise((res, rej) => {
+      const rq = indexedDB.open("filmcamera-db", 1);
+      rq.onupgradeneeded = () => { rq.result.createObjectStore("photos", { keyPath: "id", autoIncrement: true }); };
+      rq.onsuccess = () => res(rq.result);
+      rq.onerror = () => rej(rq.error);
+    });
+    return this.dbp;
+  },
+  async add(rec) {
+    const db = await this.open();
+    return new Promise((res, rej) => { const rq = db.transaction("photos", "readwrite").objectStore("photos").add(rec); rq.onsuccess = () => res(rq.result); rq.onerror = () => rej(rq.error); });
+  },
+  async countRoll(rollId) {
+    const db = await this.open();
+    return new Promise(res => {
+      let n = 0;
+      const rq = db.transaction("photos").objectStore("photos").openCursor();
+      rq.onsuccess = () => { const cur = rq.result; if (cur) { if (cur.value.rollId === rollId) n++; cur.continue(); } else res(n); };
+      rq.onerror = () => res(n);
+    });
+  },
+  async total() {
+    const db = await this.open();
+    return new Promise(res => { const rq = db.transaction("photos").objectStore("photos").count(); rq.onsuccess = () => res(rq.result); rq.onerror = () => res(0); });
+  },
+  async lastOfRoll(rollId) {
+    const db = await this.open();
+    return new Promise(res => {
+      let last = null;
+      const rq = db.transaction("photos").objectStore("photos").openCursor();
+      rq.onsuccess = () => { const cur = rq.result; if (cur) { if (cur.value.rollId === rollId) last = cur.value; cur.continue(); } else res(last); };
+      rq.onerror = () => res(null);
+    });
+  },
+};
+
+/* ---- フィルムシミュレーション ---- */
+function makeLUT(p) {
+  const lut = new Uint8ClampedArray(256);
+  for (let v = 0; v < 256; v++) {
+    let x = Math.pow(v / 255, p.gamma) * 255;
+    lut[v] = (x - 128) * p.con + 128 + p.lift;
+  }
+  return lut;
+}
+function halationPass(ctx, W, H, strength) {
+  const sw = Math.max(8, Math.round(W / 12)), sh = Math.max(8, Math.round(H / 12));
+  const small = document.createElement("canvas"); small.width = sw; small.height = sh;
+  const sc2 = small.getContext("2d");
+  sc2.drawImage(ctx.canvas, 0, 0, sw, sh);
+  const sd = sc2.getImageData(0, 0, sw, sh), px = sd.data;
+  for (let i = 0; i < px.length; i += 4) {
+    const lum = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
+    const g = Math.max(0, lum - 185) / 70;
+    px[i] = 255 * g; px[i + 1] = 42 * g; px[i + 2] = 24 * g; px[i + 3] = 255;
+  }
+  sc2.putImageData(sd, 0, 0);
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+  ctx.globalAlpha = 0.5 * strength;
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(small, 0, 0, W, H);
+  ctx.restore();
+}
+function applyFilmSim(ctx, W, H, film) {
+  const p = film.sim, lut = makeLUT(p), sat = p.sat;
+  const img = ctx.getImageData(0, 0, W, H), d = img.data;
+  for (let i = 0; i < d.length; i += 4) {
+    let r = d[i], g = d[i + 1], b = d[i + 2];
+    const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+    if (p.bw) { r = g = b = lum; }
+    else if (sat !== 1) { r = lum + (r - lum) * sat; g = lum + (g - lum) * sat; b = lum + (b - lum) * sat; }
+    d[i] = lut[(r < 0 ? 0 : r > 255 ? 255 : r) | 0] * p.rk;
+    d[i + 1] = lut[(g < 0 ? 0 : g > 255 ? 255 : g) | 0] * p.gk;
+    d[i + 2] = lut[(b < 0 ? 0 : b > 255 ? 255 : b) | 0] * p.bk;
+  }
+  ctx.putImageData(img, 0, 0);
+  if (p.hal > 0) halationPass(ctx, W, H, p.hal);
+  if (p.grain > 0) {
+    const img2 = ctx.getImageData(0, 0, W, H), d2 = img2.data, amp = p.grain * 46;
+    for (let i = 0; i < d2.length; i += 4) {
+      const n = (Math.random() - 0.5) * 2 * amp;
+      d2[i] += n; d2[i + 1] += n; d2[i + 2] += n;
+    }
+    ctx.putImageData(img2, 0, 0);
+  }
+  if (p.vig > 0) {
+    const gr = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.42, W / 2, H / 2, Math.max(W, H) * 0.72);
+    gr.addColorStop(0, "rgba(0,0,0,0)");
+    gr.addColorStop(1, "rgba(0,0,0," + p.vig + ")");
+    ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
+  }
+}
+
+/* ---- 撮影 ---- */
+function capturePhoto() {
+  const F = filmState, film = filmOf(F.id), frame = F.frameNo;
+  if (!state.camOk) { hint("カメラが起動していないため、この1枚は保存されませんでした"); return; }
+  const v = $("v-m6");
+  if (!v.videoWidth) return;
+  let W = v.videoWidth, H = v.videoHeight;
+  const MAX = 2560, sc = Math.min(1, MAX / Math.max(W, H));
+  W = Math.max(2, Math.round(W * sc)); H = Math.max(2, Math.round(H * sc));
+  const c = document.createElement("canvas"); c.width = W; c.height = H;
+  const ctx = c.getContext("2d");
+  ctx.drawImage(v, 0, 0, W, H);
+  applyFilmSim(ctx, W, H, film);
+  const rec = { rollId: F.rollId, frame, filmId: film.id, ts: Date.now(), ss: ssLabel(), ap: APS[state.apIdx], iso: state.iso, focal: state.focal, w: W, h: H };
+  c.toBlob(async blob => { if (blob) { rec.blob = blob; try { await PhotoDB.add(rec); } catch (e) {} } }, "image/jpeg", 0.92);
+}
+
+/* ---- 底蓋と装填のUI ---- */
+function sndLock(open) {
+  blip(open ? 190 : 150, 0.08, 0.10, "sine");
+  noiseHit(0, 0.03, 1500, 0.07);
+  setTimeout(() => noiseHit(0, 0.025, 2100, 0.05), 55);
+}
+function updateFilmUI() {
+  const F = filmState, film = F.id ? filmOf(F.id) : null;
+  if (F.stage === "none") {
+    $("memo-film").textContent = "フィルム未装填";
+    $("memo-sub").textContent = "底蓋を開けてフィルムを入れてください";
+  } else if (F.stage === "blank") {
+    $("memo-film").textContent = film.name + "（装填中）";
+    $("memo-sub").textContent = "底蓋を閉めて、空シャッターをあと " + (2 - F.blanks) + " 回切ってください";
+    $("counter").textContent = "000";
+  } else if (F.stage === "ready") {
+    $("memo-film").textContent = film.name;
+    $("memo-sub").textContent = "ISO " + film.iso + "（自動セット）・残り " + (F.frames - F.exposed) + " 枚";
+    $("counter").textContent = String(F.frameNo).padStart(3, "0");
+  } else if (F.stage === "finished") {
+    $("memo-film").textContent = film.name + "（撮り切り）";
+    $("memo-sub").textContent = "底蓋を開けて取り出してください（現像は第3期で入ります）";
+    $("counter").textContent = String(F.frames).padStart(3, "0");
+  }
+  $("lock-cap").textContent = coverOpenFlag ? "底蓋ロック：OPEN" : "底蓋ロック：CLOSE";
+  $("btn-lock").classList.toggle("open", coverOpenFlag);
+}
+function renderChamber() {
+  const F = filmState, inner = $("chamber-inner");
+  if (F.stage === "none") {
+    inner.innerHTML = '<div class="chamber-empty">フィルム室は空です</div><button type="button" class="big-btn" id="btn-choose">フィルムを選ぶ</button>';
+    $("btn-choose").addEventListener("click", () => { $("drawer").hidden = false; sndClick(); });
+  } else {
+    const film = filmOf(F.id);
+    inner.innerHTML =
+      '<div class="cart" style="background:' + film.color + ";color:" + film.text + '">' +
+      '<div class="cart-name">' + film.name + '</div>' +
+      '<div class="cart-sub">ISO ' + film.iso + " ・ " + film.kind + " ・ " + F.frames + "枚撮り（" + F.exposed + "枚撮影済み）</div></div>" +
+      '<button type="button" class="ghost-btn" id="btn-remove">巻き戻して取り出す</button>';
+    $("btn-remove").addEventListener("click", () => {
+      if (confirm("巻き戻して取り出しますか？（撮った写真は端末に残ります）")) removeFilm();
+    });
+  }
+}
+function removeFilm() {
+  filmState = { id: null, frames: 36, exposed: 0, frameNo: 0, blanks: 0, stage: "none", rollId: null, pendingAdvance: false };
+  saveFilmState();
+  $("drawer").hidden = true;
+  renderChamber(); updateFilmUI();
+  hint("フィルムを取り出しました。撮った写真は端末に残っています（現像は第3期）");
+}
+function doLoadFilm() {
+  const film = filmOf(selFilmId);
+  filmState = { id: film.id, frames: selFrames, exposed: 0, frameNo: 0, blanks: 0, stage: "blank", rollId: "roll-" + Date.now(), pendingAdvance: false };
+  state.iso = film.iso;
+  segSelect("iso-row", "iso", state.iso);
+  save(); saveFilmState();
+  $("drawer").hidden = true;
+  renderChamber(); updateFilmUI();
+  hint(film.name + " を装填しました。底蓋を閉めて、空シャッターを2回切ってください（ISOは自動で " + film.iso + " になりました）");
+}
+function buildDrawer() {
+  const grid = $("film-grid");
+  for (const film of FILMS) {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "film-card"; b.dataset.film = film.id;
+    b.innerHTML = '<div class="band" style="background:' + film.color + '"></div><div class="fc-name">' + film.name + '</div><div class="fc-meta">ISO ' + film.iso + " ・ " + film.kind + "<br>" + film.trait + "</div>";
+    b.addEventListener("click", () => {
+      selFilmId = film.id;
+      for (const c of grid.querySelectorAll(".film-card")) c.classList.toggle("sel", c.dataset.film === film.id);
+      sndClick();
+    });
+    grid.appendChild(b);
+  }
+}
+$("btn-lock").addEventListener("click", () => {
+  coverOpenFlag = !coverOpenFlag;
+  sndLock(coverOpenFlag);
+  if (coverOpenFlag) {
+    if (filmState.stage === "blank") { filmState.blanks = 0; saveFilmState(); }
+    $("chamber").hidden = false;
+    renderChamber();
+  } else {
+    $("chamber").hidden = true;
+    $("drawer").hidden = true;
+    if (filmState.stage === "blank") hint("空シャッターを2回切ると、撮影できるようになります");
+  }
+  updateFilmUI();
+});
+segWire("frames-row", "frames", v => { selFrames = Number(v); segSelect("frames-row", "frames", v); save(); });
+$("btn-load").addEventListener("click", () => {
+  if (!selFilmId) { hint("先にフィルムを選んでください"); return; }
+  sndClick();
+  doLoadFilm();
+});
+
+/* ---- 第1期の巻き上げ／シャッターとの接続 ---- */
+window.__film = {
+  coverOpen: () => coverOpenFlag,
+  finished: () => filmState.stage === "finished",
+  onWind() {
+    if (filmState.pendingAdvance) {
+      filmState.pendingAdvance = false;
+      filmState.frameNo++;
+      saveFilmState(); updateFilmUI();
+    }
+  },
+  onFire() {
+    const F = filmState;
+    if (F.stage === "none") return false;
+    if (F.stage === "finished") return true;
+    if (F.stage === "blank") {
+      F.blanks++;
+      if (F.blanks >= 2) { F.stage = "ready"; F.frameNo = 1; hint("フィルム装填完了。撮影できます"); }
+      else hint("空シャッター あと1回です");
+      saveFilmState(); updateFilmUI();
+      return true;
+    }
+    capturePhoto();
+    F.exposed++; F.pendingAdvance = true;
+    if (F.exposed >= F.frames) { F.stage = "finished"; hint("撮り切りました。底蓋を開けて取り出してください（現像は第3期で入ります）"); }
+    saveFilmState(); updateFilmUI();
+    return true;
+  },
+};
+
+buildDrawer();
+updateFilmUI();
+if (filmState.stage !== "none" && filmState.id) { /* 装填状態の復元 */ updateFilmUI(); }
+
+/* テスト用フック（第2期） */
+window.__fc2 = {
+  filmState: () => filmState, FILMS, PhotoDB, applyFilmSim,
+  loadFilm: (id, frames) => { selFilmId = id; selFrames = frames || 36; doLoadFilm(); },
+  removeFilm,
+  setCover: open => { if (open !== coverOpenFlag) $("btn-lock").click(); },
 };
 </script>
 </body>
