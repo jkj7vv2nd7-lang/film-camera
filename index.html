@@ -44,7 +44,7 @@ h1{position:absolute;left:-9999px}
   border-radius:12px;padding:10px 12px;margin:-2px -2px 12px;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.18), inset 0 -3px 6px rgba(0,0,0,.55);
 }
-.brand{text-align:center;padding-top:4px;min-width:96px}
+.brand{text-align:center;padding-top:4px;min-width:84px}
 .brand .dot{display:inline-block;width:17px;height:17px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ff6b78,var(--red) 60%,#8f1220);box-shadow:0 1px 3px rgba(0,0,0,.6);vertical-align:-3px;margin-right:6px}
 .brand .name{font-family:Georgia,"Times New Roman",serif;font-size:1.55rem;letter-spacing:.14em;color:#f2f2f2;text-shadow:0 1px 0 #000,0 0 6px rgba(0,0,0,.4)}
 .brand .sub{font-size:.62rem;letter-spacing:.34em;color:#c9c9ce;margin-top:2px}
@@ -65,14 +65,14 @@ h1{position:absolute;left:-9999px}
 #ss-read small{font-size:.72rem;color:var(--amber)}
 
 /* 巻き上げ・シャッター・カウンター */
-.wind-col{text-align:center;width:118px}
+.wind-col{text-align:center;width:132px}
 #counter{font-family:Georgia,serif;font-size:1.05rem;background:#101012;color:var(--amber);border-radius:6px;padding:2px 0 3px;box-shadow:inset 0 2px 5px #000;letter-spacing:.2em}
 .wind-row{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
 #btn-wind{position:relative;width:56px;height:40px;border:none;background:transparent;cursor:pointer;padding:0}
 #btn-wind .lever{position:absolute;left:2px;top:14px;width:52px;height:12px;border-radius:6px;background:linear-gradient(180deg,#5a5a62,#333338);box-shadow:0 2px 5px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.3);transform-origin:7px 6px;transition:transform .12s}
 #btn-wind.wound .lever{transform:rotate(-38deg)}
 #btn-wind .post{position:absolute;left:0;top:11px;width:16px;height:16px;border-radius:50%;background:radial-gradient(circle at 40% 32%,#55555c,#26262b 72%);box-shadow:0 1px 3px rgba(0,0,0,.6)}
-#btn-shutter{width:46px;height:46px;border-radius:50%;border:none;cursor:pointer;
+#btn-shutter{width:64px;height:64px;border-radius:50%;border:none;cursor:pointer;
   background:radial-gradient(circle at 38% 30%,#6a6a72,#333338 68%);box-shadow:0 4px 9px rgba(0,0,0,.65), inset 0 2px 3px rgba(255,255,255,.35)}
 #btn-shutter:active{transform:translateY(2px)}
 #btn-shutter .hole{display:block;width:12px;height:12px;margin:0 auto;border-radius:50%;background:#141416;box-shadow:inset 0 1px 3px #000}
@@ -209,13 +209,53 @@ input[type=range]{width:100%;height:44px;accent-color:var(--red);cursor:pointer}
 #frame-info{font-size:.8rem;color:var(--dim);text-align:center;margin-top:8px;line-height:1.7}
 a.ghost-btn{display:block;text-align:center;text-decoration:none;line-height:50px}
 .dr-note{font-size:.72rem;color:#6d6d74;text-align:center;margin-top:8px;line-height:1.7}
+
+/* ===== 2モードUI（撮影／設定） ===== */
+#mode-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:2px 2px 10px}
+#mode-bar .mb-title{font-family:Georgia,"Times New Roman",serif;letter-spacing:.18em;font-size:1.05rem;color:#f2f2f2}
+#mode-bar button{min-height:48px;padding:8px 22px;border-radius:10px;border:1px solid #3c3c42;background:linear-gradient(180deg,#333338,#242428);color:var(--ink);font-size:1rem;cursor:pointer}
+#mode-bar button:active{transform:translateY(1px)}
+#btn-to-shoot{background:linear-gradient(180deg,#5a2027,#3d1218);border-color:var(--red);color:#fff}
+#shoot-screen[hidden],#settings-screen[hidden]{display:none !important}
+#settings-screen{padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+body.mode-shoot{height:100dvh;overflow:hidden;display:flex;flex-direction:column;padding:8px 10px calc(8px + env(safe-area-inset-bottom))}
+body.mode-shoot #app{flex:1;min-height:0;display:flex;flex-direction:column;width:100%}
+body.mode-shoot #shoot-screen{flex:1;min-height:0;display:flex;flex-direction:column}
+body.mode-shoot #finder-area{flex:1;min-height:0;display:flex;flex-direction:column}
+body.mode-shoot .vf{flex:1;min-height:0;aspect-ratio:auto}
+body.mode-shoot #vf-barnack.show{flex:1;min-height:0}
+body.mode-shoot .b-win{height:auto}
+body.mode-shoot #shoot-ctl-wrap{flex:0 0 auto}
+body.mode-shoot #shoot-ctl-wrap .ctl{margin-top:10px}
+@media (orientation:landscape) and (max-height:600px){
+  body.mode-shoot #app{max-width:1020px}
+  #mode-bar{padding:0 2px 6px}
+  #mode-bar button{min-height:40px;padding:4px 16px}
+  body.mode-shoot #shoot-screen{display:grid;grid-template-columns:minmax(0,1fr) 252px;grid-template-rows:repeat(4,auto);gap:10px;overflow-y:auto;align-content:start}
+  body.mode-shoot .top-plate{grid-column:2;grid-row:1;flex-direction:column;align-items:stretch;gap:4px;margin:0;padding:8px 10px}
+  body.mode-shoot .dial-col,body.mode-shoot .wind-col{width:auto}
+  body.mode-shoot #dial{width:64px;height:64px}
+  body.mode-shoot .dial-label,body.mode-shoot .wind-label,body.mode-shoot .brand .sub,body.mode-shoot .brand .engrave{display:none}
+  body.mode-shoot .brand{order:-1;padding-top:0;min-width:0}
+  body.mode-shoot .brand .name{font-size:1.15rem}
+  body.mode-shoot #ss-read{font-size:1.05rem;min-height:1.3em}
+  body.mode-shoot #charge-state{font-size:.68rem}
+  body.mode-shoot #finder-area{grid-column:1;grid-row:1 / span 4;position:sticky;top:0;height:calc(100dvh - 128px)}
+  body.mode-shoot #shoot-ctl-wrap{grid-column:2;grid-row:2}
+  body.mode-shoot #cam-msg{grid-column:2;grid-row:3}
+  body.mode-shoot #hint{grid-column:2;grid-row:4}
+}
 </style>
 </head>
 <body>
 <div id="app">
 <h1>フィルムカメラ</h1>
 
-<div id="landscape-hint"><span>横向きにすると、ファインダーが広く使えます</span><button id="btn-hint-x" type="button">閉じる</button></div>
+<div id="mode-bar">
+  <span class="mb-title">フィルムカメラ</span>
+  <button type="button" id="btn-to-settings">設定</button>
+  <button type="button" id="btn-to-shoot" hidden>撮影に戻る</button>
+</div>
 
 <div class="body-panel">
   <div class="top-plate">
@@ -692,6 +732,51 @@ function meterTick() {
 }
 setInterval(meterTick, 200);
 
+/* ================= 2モードUI（撮影／設定） ================= */
+state.uiMode = "shoot";
+(function setupModes() {
+  const app = $("app");
+  const shootPanel = document.querySelector(".body-panel");
+  shootPanel.id = "shoot-screen";
+  const settingsScreen = document.createElement("div");
+  settingsScreen.id = "settings-screen";
+  settingsScreen.hidden = true;
+  app.appendChild(settingsScreen);
+  const ctlOf = id => document.getElementById(id).closest(".ctl");
+  /* 撮影側：絞りとフォーカスをファインダーの下へ */
+  const ctlWrap = document.createElement("div");
+  ctlWrap.id = "shoot-ctl-wrap";
+  ctlWrap.append(ctlOf("ap-row"), ctlOf("focus-range"));
+  $("finder-area").after(ctlWrap);
+  /* 設定側：方式・レンズ枠・ISO・測光較正・説明・フッター・底蓋・現像室 */
+  const two = document.createElement("div");
+  two.className = "two";
+  two.append(ctlOf("focal-row"), ctlOf("iso-row"));
+  settingsScreen.append(
+    shootPanel.querySelector("p.note"),
+    ctlOf("mode-row"),
+    two,
+    ctlOf("meter-read"),
+    shootPanel.querySelector("p.foot"),
+    document.querySelector(".back-panel"),
+    $("darkroom")
+  );
+  shootPanel.querySelectorAll(".two").forEach(d => { if (!d.children.length) d.remove(); });
+  document.body.classList.add("mode-shoot");
+})();
+function setUiMode(m) {
+  state.uiMode = m;
+  document.body.classList.toggle("mode-shoot", m === "shoot");
+  document.body.classList.toggle("mode-settings", m === "settings");
+  $("shoot-screen").hidden = m !== "shoot";
+  $("settings-screen").hidden = m !== "settings";
+  $("btn-to-settings").hidden = m !== "shoot";
+  $("btn-to-shoot").hidden = m !== "settings";
+  window.scrollTo(0, 0);
+}
+$("btn-to-settings").addEventListener("click", () => setUiMode("settings"));
+$("btn-to-shoot").addEventListener("click", () => setUiMode("shoot"));
+
 /* ================= 初期化 ================= */
 (function init() {
   renderShutter();
@@ -705,18 +790,13 @@ setInterval(meterTick, 200);
   renderCal();
   $("focus-range").value = state.focusIdx;
   renderFocus();
-  if (!localStorage.getItem("filmcam-hint-x")) $("landscape-hint").classList.add("show");
-  $("btn-hint-x").addEventListener("click", () => {
-    $("landscape-hint").classList.remove("show");
-    try { localStorage.setItem("filmcam-hint-x", "1"); } catch (e) {}
-  });
   startCamera();
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 })();
 
 /* テスト用フック */
 window.__fc = {
-  state, SPEEDS, APS, DISTS, meterCalc, setCal,
+  state, SPEEDS, APS, DISTS, meterCalc, setCal, setUiMode,
   setShutter: i => setShutter(i, true), wind, fire, sndShutter,
   setLumOverride: v => { state.lumOverride = v; },
 };
