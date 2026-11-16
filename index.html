@@ -245,6 +245,21 @@ body.mode-shoot #shoot-ctl-wrap .ctl{margin-top:10px}
   body.mode-shoot #cam-msg{grid-column:2;grid-row:3}
   body.mode-shoot #hint{grid-column:2;grid-row:4}
 }
+/* ===== 名玉レンズ統合 ===== */
+#gl-view{position:absolute;inset:0;width:100%;height:100%;visibility:hidden}
+#bv-copy{position:absolute;inset:0;width:100%;height:100%;visibility:hidden}
+#lens-name{font-family:Georgia,serif;font-size:.68rem;color:var(--amber);letter-spacing:.06em;margin-top:5px}
+#lens-list{display:flex;flex-direction:column;gap:6px}
+.lens-card{display:flex;align-items:center;gap:10px;width:100%;text-align:left;min-height:52px;border-radius:9px;border:1px solid #3c3c42;background:linear-gradient(180deg,#333338,#242428);color:var(--ink);cursor:pointer;padding:8px 12px}
+.lens-card .lc-main{flex:1}
+.lens-card .lc-name{font-family:Georgia,serif;font-size:1rem}
+.lens-card .lc-year{font-size:.68rem;color:var(--dim);margin-left:6px}
+.lens-card .lc-trait{display:block;font-size:.72rem;color:var(--dim);margin-top:2px}
+.lens-card.sel{background:linear-gradient(180deg,#5a2027,#3d1218);border-color:var(--red);color:#fff}
+.lens-card.sel .lc-trait,.lens-card.sel .lc-year{color:#f0b9be}
+.lens-card:active{transform:translateY(1px)}
+#lens-desc{font-size:.8rem;color:#cfcfd4;line-height:1.65;margin-top:10px}
+#lens-desc .homage{font-size:.7rem;color:var(--dim)}
 </style>
 </head>
 <body>
@@ -272,6 +287,7 @@ body.mode-shoot #shoot-ctl-wrap .ctl{margin-top:10px}
       <div><span class="dot"></span><span class="name">M6</span></div>
       <div class="sub">FILM CAMERA</div>
       <div class="engrave" style="font-size:.66rem;margin-top:8px;letter-spacing:.2em">MADE FOR FILM LOVERS</div>
+      <div id="lens-name">Wetzlar 50mm F1.4</div>
     </div>
     <div class="wind-col">
       <div id="counter">000</div>
@@ -288,6 +304,7 @@ body.mode-shoot #shoot-ctl-wrap .ctl{margin-top:10px}
   <div id="finder-area">
     <div class="vf" id="vf-m6">
       <video class="scene" id="v-m6" playsinline muted autoplay></video>
+      <canvas id="gl-view" width="960" height="720"></canvas>
       <div class="vig"></div>
       <div class="frame-line f35" data-f="35"><span class="frame-tag">35</span></div>
       <div class="frame-line f50 sel" data-f="50"><span class="frame-tag">50</span></div>
@@ -309,6 +326,7 @@ body.mode-shoot #shoot-ctl-wrap .ctl{margin-top:10px}
       </div>
       <div class="b-win vf2">
         <video class="scene" id="v-bv" playsinline muted autoplay></video>
+        <canvas id="bv-copy" width="480" height="360"></canvas>
         <span class="b-tag">構図</span>
         <div class="led-bar">
           <span class="led" id="led-under2">◀</span><span class="led" id="led-ok2">●</span><span class="led" id="led-over2">▶</span>
@@ -332,13 +350,10 @@ body.mode-shoot #shoot-ctl-wrap .ctl{margin-top:10px}
   </div>
 
   <div class="two">
-    <div class="ctl">
-      <h2>レンズ（枠）</h2>
-      <div class="seg" id="focal-row">
-        <button type="button" data-focal="35">35<small>mm</small></button>
-        <button type="button" data-focal="50" class="sel">50<small>mm</small></button>
-        <button type="button" data-focal="90">90<small>mm</small></button>
-      </div>
+    <div class="ctl" id="lens-ctl">
+      <h2>レンズ（名玉）</h2>
+      <div id="lens-list"></div>
+      <div id="lens-desc"></div>
     </div>
     <div class="ctl">
       <h2>絞り（仮想）</h2>
@@ -430,23 +445,95 @@ const SPEEDS = [
   { label: "8", t: 1/8 }, { label: "15", t: 1/15 }, { label: "30", t: 1/30 }, { label: "60", t: 1/60 },
   { label: "125", t: 1/125 }, { label: "250", t: 1/250 }, { label: "500", t: 1/500 }, { label: "1000", t: 1/1000 },
 ];
-const APS = [1.4, 2, 2.8, 4, 5.6, 8, 11, 16];
+const APS = [0.95, 1.4, 1.8, 2, 2.8, 4, 5.6, 8, 11, 16];
+const APS_OLD = [1.4, 2, 2.8, 4, 5.6, 8, 11, 16]; /* 移行用（レンズ統合前の並び） */
 const ISOS = [100, 200, 400, 800, 1600, 3200];
 const DISTS = [0.7, 0.8, 0.9, 1, 1.2, 1.5, 2, 3, 5, 10, Infinity];
 const state = {
-  ssIdx: 8, apIdx: 3, focusIdx: 6, focal: 50, mode: "m6", iso: 400, cal: 3.0,
+  ssIdx: 8, apIdx: 5, focusIdx: 6, focal: 50, mode: "m6", iso: 400, cal: 3.0, lens: "lux",
   charged: false, count: 0, lum: 0.4, lumOverride: null, camOk: false, led: "ok",
 };
 /* 較正値の符号は「補正量（段）」：+3.0 = 明るさの読みを3段下げる（明るく測りすぎの直し）。
    符号の意味が途中の版と逆になったため、保存キーを v3 に変えて旧値を引き継がない。 */
 try {
   const s = JSON.parse(localStorage.getItem("filmcam-v3") || "null");
-  if (s) { for (const k of ["ssIdx","apIdx","focusIdx","focal","mode","iso","cal"]) if (s[k] !== undefined) state[k] = s[k]; }
+  if (s) {
+    for (const k of ["ssIdx","apIdx","focusIdx","focal","mode","iso","cal","lens"]) if (s[k] !== undefined) state[k] = s[k];
+    /* レンズ統合前の保存は apIdx が旧APS基準なので、新APSの同じ絞り値へ移し替える */
+    if (s.lens === undefined && s.apIdx !== undefined && APS_OLD[s.apIdx] !== undefined) {
+      const ni = APS.indexOf(APS_OLD[s.apIdx]);
+      if (ni >= 0) state.apIdx = ni;
+    }
+  }
 } catch (e) {}
 function save() {
-  try { localStorage.setItem("filmcam-v3", JSON.stringify({ ssIdx: state.ssIdx, apIdx: state.apIdx, focusIdx: state.focusIdx, focal: state.focal, mode: state.mode, iso: state.iso, cal: state.cal })); } catch (e) {}
+  try { localStorage.setItem("filmcam-v3", JSON.stringify({ ssIdx: state.ssIdx, apIdx: state.apIdx, focusIdx: state.focusIdx, focal: state.focal, mode: state.mode, iso: state.iso, cal: state.cal, lens: state.lens })); } catch (e) {}
 }
 const $ = id => document.getElementById(id);
+
+/* ================= 名玉レンズ（名玉カメラから統合） ================= */
+const LENSES = {
+  lux: {
+    label: "Wetzlar 50mm F1.4", mm: 50, year: 1961, trait: "「貴婦人」グローとレモン型ボケ",
+    stops: [1.4, 2.0, 2.8, 4.0, 5.6, 8.0],
+    swirl: 0.10, curve: 0.10, ring: 0.05, glow: 0.50, vig: 0.50, ca: 0.0028,
+    lemon: 0.40, veil: 0.55,
+    ghostMode: 4, ghostAmt: 0.30, tint: [1.02, 1.0, 0.97], contrast: 0.90, lift: 0.03, pastel: 0.15, sat: 0.94, cocMul: 1.05,
+    desc: "<b>Wetzlar 50mm F1.4（1961）</b> ― 「貴婦人」と呼ばれた初代大口径標準レンズへのオマージュです。開放ではハイライトに柔らかいグローがかかりながら芯は残り、周辺の玉ボケはレモン型に少し潰れます（口径食）。逆光では画面全体に優しいベールがかかり、発色はクラシックで穏やかです。<br><span class='homage'>※実在の名玉への敬意を込めたオマージュ名称です。描写は癖の特徴をもとに再現したもので、実レンズの写りを保証するものではありません。深度は擬似的な推定（演出）です。</span>",
+  },
+  ural: {
+    label: "Ural 58mm F2.0", mm: 58, year: 1968, trait: "ぐるぐるボケと虹色リングゴースト",
+    stops: [2.0, 2.8, 4.0, 5.6, 8.0],
+    swirl: 1.15, curve: 0.18, ring: 0.0, glow: 0.38, vig: 0.62, ca: 0.0038,
+    ghostMode: 1, ghostAmt: 0.5, tint: [0.965, 1.0, 1.065], contrast: 0.88, lift: 0.02, pastel: 0.0,
+    desc: "<b>Ural 58mm F2.0（1968）</b> ― 冷戦期の東側で生まれた大口径標準レンズへのオマージュです。開放では周辺のボケが渦を巻く「ぐるぐるボケ」と、像面湾曲による周辺のピントのずれ、やや青みを帯びた発色が特徴。逆光では大きな円弧のハローと、虹色のリングゴーストが現れます。<br><span class='homage'>※実在の名玉への敬意を込めたオマージュ名称です。描写は癖の特徴をもとに再現したもので、実レンズの写りを保証するものではありません。深度は擬似的な推定（演出）です。</span>",
+  },
+  gorlitz: {
+    label: "Gorlitz 100mm F2.8", mm: 100, year: 1950, trait: "シャボン玉ボケとパステルの柔らかさ",
+    stops: [2.8, 4.0, 5.6, 8.0],
+    swirl: 0.02, curve: 0.05, ring: 0.85, glow: 0.24, vig: 0.42, ca: 0.002,
+    ghostMode: 2, ghostAmt: 0.18, tint: [1.03, 1.0, 0.955], contrast: 0.82, lift: 0.05, pastel: 0.5,
+    desc: "<b>Gorlitz 100mm F2.8（1950）</b> ― 戦後まもないドイツの3枚玉（トリプレット）中望遠へのオマージュです。玉ボケの輪郭だけが明るく残る「シャボン玉ボケ」が代名詞。ハイライトはパステル調ににじみ、コントラストは低めで、全体に柔らかく夢見るような写りになります。ゴーストは控えめです。<br><span class='homage'>※実在の名玉への敬意を込めたオマージュ名称です。描写は癖の特徴をもとに再現したもので、実レンズの写りを保証するものではありません。深度は擬似的な推定（演出）です。</span>",
+  },
+  tokyo: {
+    label: "Tokyo 55mm F1.8", mm: 55, year: 1965, trait: "虹ゴーストの連鎖と6本の光芒",
+    stops: [1.8, 2.8, 4.0, 5.6, 8.0],
+    swirl: 0.06, curve: 0.08, ring: 0.10, glow: 0.30, vig: 0.45, ca: 0.0030,
+    starburst: 0.8,
+    ghostMode: 3, ghostAmt: 0.55, tint: [1.06, 1.0, 0.90], contrast: 0.92, lift: 0.02, pastel: 0.05, sat: 1.05, cocMul: 0.95,
+    desc: "<b>Tokyo 55mm F1.8（1965）</b> ― 1960年代の国産大衆標準レンズへのオマージュです。硝材由来とされるアンバー寄りの温かい色づきが特徴で、逆光では対角線上に虹色のゴーストが7〜8個連なります。絞ると点光源に光芒（6本のすじ）が出ます。<br><span class='homage'>※実在の名玉への敬意を込めたオマージュ名称です。描写は癖の特徴をもとに再現したもので、実レンズの写りを保証するものではありません。深度は擬似的な推定（演出）です。</span>",
+  },
+  jena: {
+    label: "Jena 50mm F1.4", mm: 50, year: 1973, trait: "高いコントラストと絞ると締まるキレ",
+    stops: [1.4, 2.0, 2.8, 4.0, 5.6, 8.0],
+    swirl: 0.03, curve: 0.04, ring: 0.05, glow: 0.16, vig: 0.38, ca: 0.0012,
+    ghostMode: 5, ghostAmt: 0.22, tint: [0.99, 1.0, 1.03], contrast: 1.04, lift: -0.02, pastel: 0.0, sat: 1.16, cocMul: 1.10, cocPow: 1.35,
+    desc: "<b>Jena 50mm F1.4（1973）</b> ― 高性能コーティングで知られるプラナー型大口径へのオマージュです。マイクロコントラストが高く、被写体の質感と立体感が際立ちます。F1.4では繊細な滲みが残りますが、F2.8から鋭く締まります。青と赤は深く、黒は引き締まって沈みます。ゴーストはごく淡く抑えられています。<br><span class='homage'>※実在の名玉への敬意を込めたオマージュ名称です。描写は癖の特徴をもとに再現したもので、実レンズの写りを保証するものではありません。深度は擬似的な推定（演出）です。</span>",
+  },
+  noct: {
+    label: "Wetzlar 50mm F0.95", mm: 50, year: 1975, trait: "超大口径、極端に浅い深度と夜のグロー",
+    stops: [0.95, 1.4, 2.0, 2.8, 4.0, 5.6],
+    swirl: 0.30, curve: 0.22, ring: 0.05, glow: 0.55, vig: 0.88, ca: 0.0042,
+    ghostMode: 0, ghostAmt: 0.0, tint: [1.0, 0.99, 1.01], contrast: 0.97, lift: -0.03, pastel: 0.10, sat: 1.02, cocMul: 1.50, cocPow: 0.90,
+    desc: "<b>Wetzlar 50mm F0.95（1975）</b> ― 夜の光を集める超大口径レンズへのオマージュです。被写界深度は極端に浅く、周辺は大きく減光します。ハイライトは幻想的に滲み、シャドウは漆黒に沈む、夜のための写りです。<br><span class='homage'>※実在の名玉への敬意を込めたオマージュ名称です。描写は癖の特徴をもとに再現したもので、実レンズの写りを保証するものではありません。深度は擬似的な推定（演出）です。</span>",
+  },
+};
+const LENS_ORDER = ["lux", "ural", "gorlitz", "tokyo", "jena", "noct"];
+const FRAME_FOR_MM = { 50: 50, 55: 50, 58: 50, 100: 90 };
+function lensFocal() { return FRAME_FOR_MM[LENSES[state.lens].mm] || 50; }
+function applyFocal() {
+  state.focal = lensFocal();
+  for (const f of document.querySelectorAll(".frame-line")) f.classList.toggle("sel", Number(f.dataset.f) === state.focal);
+}
+function buildApRow() {
+  const ap = $("ap-row");
+  ap.innerHTML = "";
+  for (const v of LENSES[state.lens].stops) {
+    const b = document.createElement("button");
+    b.type = "button"; b.dataset.ap = APS.indexOf(v); b.innerHTML = "f/" + v;
+    ap.appendChild(b);
+  }
+}
 
 /* ================= 音（Web Audio合成） ================= */
 let AC = null, noiseBuf = null;
@@ -630,18 +717,8 @@ segWire("mode-row", "mode", v => {
   $("vf-barnack").classList.toggle("show", v === "barnack");
   save();
 });
-segWire("focal-row", "focal", v => {
-  state.focal = Number(v); segSelect("focal-row", "focal", v);
-  for (const f of document.querySelectorAll(".frame-line")) f.classList.toggle("sel", Number(f.dataset.f) === state.focal);
-  save();
-});
-(function buildApIso() {
-  const ap = $("ap-row");
-  APS.forEach((v, i) => {
-    const b = document.createElement("button");
-    b.type = "button"; b.dataset.ap = i; b.innerHTML = "f/" + v;
-    ap.appendChild(b);
-  });
+(function buildIso() {
+  buildApRow();
   const iso = $("iso-row");
   ISOS.forEach(v => {
     const b = document.createElement("button");
@@ -748,15 +825,15 @@ state.uiMode = "shoot";
   ctlWrap.id = "shoot-ctl-wrap";
   ctlWrap.append(ctlOf("ap-row"), ctlOf("focus-range"));
   $("finder-area").after(ctlWrap);
-  /* 設定側：方式・レンズ枠・ISO・測光較正・説明・フッター・底蓋・現像室 */
+  /* 設定側：方式・レンズ・ISO・測光較正・説明・フッター・底蓋・現像室 */
   const two = document.createElement("div");
   two.className = "two";
-  two.append(ctlOf("focal-row"), ctlOf("iso-row"));
+  two.append(ctlOf("iso-row"), ctlOf("meter-read"));
   settingsScreen.append(
     shootPanel.querySelector("p.note"),
     ctlOf("mode-row"),
+    $("lens-ctl"),
     two,
-    ctlOf("meter-read"),
     shootPanel.querySelector("p.foot"),
     document.querySelector(".back-panel"),
     $("darkroom")
@@ -783,8 +860,7 @@ $("btn-to-shoot").addEventListener("click", () => setUiMode("shoot"));
   segSelect("mode-row", "mode", state.mode);
   $("vf-m6").classList.toggle("hide", state.mode !== "m6");
   $("vf-barnack").classList.toggle("show", state.mode === "barnack");
-  segSelect("focal-row", "focal", state.focal);
-  for (const f of document.querySelectorAll(".frame-line")) f.classList.toggle("sel", Number(f.dataset.f) === state.focal);
+  applyFocal();
   segSelect("ap-row", "ap", state.apIdx);
   segSelect("iso-row", "iso", state.iso);
   renderCal();
@@ -964,9 +1040,9 @@ function capturePhoto() {
   W = Math.max(2, Math.round(W * sc)); H = Math.max(2, Math.round(H * sc));
   const c = document.createElement("canvas"); c.width = W; c.height = H;
   const ctx = c.getContext("2d");
-  ctx.drawImage(v, 0, 0, W, H);
+  if (!(window.LensGL && window.LensGL.renderCapture(ctx, W, H))) ctx.drawImage(v, 0, 0, W, H);
   applyFilmSim(ctx, W, H, film);
-  const rec = { rollId: F.rollId, frame, filmId: film.id, ts: Date.now(), ss: ssLabel(), ap: APS[state.apIdx], iso: state.iso, focal: state.focal, w: W, h: H };
+  const rec = { rollId: F.rollId, frame, filmId: film.id, ts: Date.now(), ss: ssLabel(), ap: APS[state.apIdx], iso: state.iso, focal: state.focal, lens: state.lens, lensName: LENSES[state.lens].label, w: W, h: H };
   c.toBlob(async blob => { if (blob) { rec.blob = blob; try { await PhotoDB.add(rec); } catch (e) {} } }, "image/jpeg", 0.92);
 }
 
@@ -1206,7 +1282,7 @@ function showFrame(rec) {
   $("frame-img").src = frameUrl;
   const film = filmOf(rec.filmId);
   const d = new Date(rec.ts);
-  $("frame-info").textContent = film.name + " ・ " + rec.frame + "コマ目 ・ " + rec.ss + " ・ f/" + rec.ap + " ・ ISO " + rec.iso + " ・ " + (d.getMonth() + 1) + "月" + d.getDate() + "日 " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+  $("frame-info").textContent = film.name + " ・ " + rec.frame + "コマ目 ・ " + rec.ss + " ・ f/" + rec.ap + " ・ ISO " + rec.iso + (rec.lensName ? " ・ " + rec.lensName : "") + " ・ " + (d.getMonth() + 1) + "月" + d.getDate() + "日 " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
   const dl = $("btn-download");
   dl.href = frameUrl;
   dl.setAttribute("download", frameFileName(rec));
@@ -1242,5 +1318,428 @@ window.__fc2 = {
   setCover: open => { if (open !== coverOpenFlag) $("btn-lock").click(); },
 };
 </script>
+<script>
+"use strict";
+/* ================= 名玉レンズ光学エンジン（WebGL） ================= */
+const LensGL = (() => {
+  const view = $("gl-view");
+  const bvCopy = $("bv-copy");
+  const bvCtx = bvCopy ? bvCopy.getContext("2d") : null;
+  /* レンズ選択UI（WebGLが使えない場合でも選べるように先に組み立てる） */
+  const list = $("lens-list");
+  for (const id of LENS_ORDER) {
+    const L = LENSES[id];
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "lens-card"; b.dataset.lens = id;
+    b.innerHTML = '<span class="lc-main"><span class="lc-name">' + L.label + '</span><span class="lc-year">' + L.year + '年</span><span class="lc-trait">' + L.trait + '</span></span>';
+    b.addEventListener("click", () => { setLens(id); sndClick(); });
+    list.appendChild(b);
+  }
+  setLens(LENSES[state.lens] ? state.lens : "lux");
+  let gl = null;
+  try { gl = view.getContext("webgl", { preserveDrawingBuffer: true, antialias: false }); } catch (e) {}
+  const api = { ready: false, frames: 0, setLens, params: lensParams, renderCapture, sun: { x: 0.5, y: 0.4, strength: 0 } };
+  if (!gl) { view.remove(); if (bvCopy) bvCopy.remove(); return api; }
+
+  const VS = "attribute vec2 p; varying vec2 vUv; void main(){ vUv = p * 0.5 + 0.5; gl_Position = vec4(p, 0.0, 1.0); }";
+const FS_BLUR = [
+  "precision highp float;",
+  "varying vec2 vUv;",
+  "uniform sampler2D uTex; uniform sampler2D uDepth;",
+  "uniform float uFocusT, uCurve, uCoC, uMaxR, uSwirl, uRing, uAspect, uLemon;",
+  "float cocAt(vec2 uv){",
+  "  float dpt = texture2D(uDepth, uv).r;",
+  "  vec2 q = (uv - 0.5) * vec2(uAspect, 1.0);",
+  "  float f = uFocusT + uCurve * clamp(dot(q, q) * 1.5, 0.0, 1.0);",
+  "  return clamp(abs(dpt - f) * uCoC, 0.0, 1.0);",
+  "}",
+  "void main(){",
+  "  float cocC = cocAt(vUv);",
+  "  float rad = cocC * uMaxR;",
+  "  vec2 q = (vUv - 0.5) * vec2(uAspect, 1.0);",
+  "  float r2n = clamp(dot(q, q) * 1.5, 0.0, 1.0);",
+  "  float field = smoothstep(0.03, 0.55, r2n);",
+  "  vec2 rdir = length(q) > 0.001 ? normalize(q) : vec2(1.0, 0.0);",
+  "  vec2 tdir = vec2(-rdir.y, rdir.x);",
+  "  float squash = clamp(uSwirl * 1.0, 0.0, 0.85) * field;",
+  "  float cw = 1.0 - uRing * 0.7;",
+  "  vec3 acc = texture2D(uTex, vUv).rgb * cw; float wsum = cw;",
+  "  for (int i = 0; i < 40; i++){",
+  "    float fi = float(i);",
+  "    float t = (fi + 0.5) / 40.0;",
+  "    float rr = sqrt(t);",
+  "    rr = mix(rr, 0.88 + 0.12 * fract(fi * 0.61803), uRing);",
+  "    float th = fi * 2.399963;",
+  "    vec2 off = vec2(cos(th), sin(th)) * rr;",
+  "    vec2 offQ = off * vec2(1.0, uAspect);",
+  "    float rotA = uSwirl * 3.4 * field * rr;",
+  "    float ca2 = cos(rotA), sa2 = sin(rotA);",
+  "    offQ = mat2(ca2, -sa2, sa2, ca2) * offQ;",
+  "    float cr = dot(offQ, rdir), ct = dot(offQ, tdir);",
+  "    offQ = rdir * cr * (1.0 - squash) * (1.0 - uLemon * field) + tdir * ct;",
+  "    vec2 suv = vUv + vec2(offQ.x, offQ.y / uAspect) * rad;",
+  "    float wa = uSwirl * 0.85 * field * cocC;",
+  "    float wc = cos(wa), ws = sin(wa);",
+  "    vec2 relQ = (suv - 0.5) * vec2(uAspect, 1.0);",
+  "    relQ = mat2(wc, -ws, ws, wc) * relQ;",
+  "    suv = 0.5 + vec2(relQ.x / uAspect, relQ.y);",
+  "    float w = 0.25 + 0.75 * clamp(cocAt(suv) * 1.25, 0.0, 1.0);",
+  "    acc += texture2D(uTex, suv).rgb * w;",
+  "    wsum += w;",
+  "  }",
+  "  gl_FragColor = vec4(acc / wsum, 1.0);",
+  "}",
+].join("\n");
+const FS_FINISH = [
+  "precision highp float;",
+  "varying vec2 vUv;",
+  "uniform sampler2D uTex;",
+  "uniform float uAspect, uGlow, uVig, uCA, uGhostAmt, uPastel, uContrast, uLift, uVeil, uStarburst, uSat;",
+  "uniform vec3 uSun; uniform vec3 uTint; uniform int uGhostMode;",
+  "float lum(vec3 c){ return dot(c, vec3(0.299, 0.587, 0.114)); }",
+  "vec3 sampleCA(vec2 uv){",
+  "  vec2 dir = uv - 0.5;",
+  "  float r2 = dot(dir, dir);",
+  "  vec2 off = dir * uCA * r2 * 4.0;",
+  "  float r = texture2D(uTex, uv + off).r;",
+  "  float g = texture2D(uTex, uv).g;",
+  "  float b = texture2D(uTex, uv - off).b;",
+  "  return vec3(r, g, b);",
+  "}",
+  "void main(){",
+  "  vec3 col = sampleCA(vUv);",
+  "  /* グロー（球面収差の柔らかさ） */",
+  "  vec3 glow = vec3(0.0);",
+  "  for (int i = 0; i < 12; i++){",
+  "    float fi = float(i);",
+  "    float th = fi * 2.399963;",
+  "    vec2 off = vec2(cos(th), sin(th)) * (0.012 + 0.030 * fract(fi * 0.61803));",
+  "    vec3 s = texture2D(uTex, vUv + off * vec2(1.0, uAspect)).rgb;",
+  "    glow += max(s - 0.52, 0.0);",
+  "  }",
+  "  col += glow / 12.0 * uGlow * 2.4;",
+  "  vec2 q = (vUv - 0.5) * vec2(uAspect, 1.0);",
+  "  vec2 sunUv = uSun.xy;",
+  "  /* ゴーストとハロー */",
+  "  if (uSun.z > 0.001 && uGhostAmt > 0.001){",
+  "    /* 太陽まわりの円弧ハロー */",
+  "    float sd = length((vUv - sunUv) * vec2(uAspect, 1.0));",
+  "    float halo = smoothstep(0.030, 0.0, abs(sd - 0.16)) * 0.5 + smoothstep(0.10, 0.0, sd) * 0.35;",
+  "    col += vec3(1.0, 0.85, 0.6) * halo * uSun.z * (uGhostMode == 1 ? 1.0 : 0.45);",
+  "    float scales[4]; scales[0] = 1.0; scales[1] = 0.55; scales[2] = 1.45; scales[3] = -0.35;",
+  "    float radii[4]; radii[0] = 0.15; radii[1] = 0.065; radii[2] = 0.23; radii[3] = 0.045;",
+  "    for (int k = 0; k < 8; k++){",
+  "      float fk = float(k);",
+  "      vec2 gc; float rad; float alpha = 1.0; vec3 tint = vec3(0.65, 0.8, 1.0);",
+  "      if (uGhostMode == 1){",
+  "        if (k > 3) break;",
+  "        gc = 0.5 + (0.5 - sunUv) * scales[k]; rad = radii[k];",
+  "      } else if (uGhostMode == 2){",
+  "        if (k > 0) break;",
+  "        gc = 0.5 + (0.5 - sunUv) * scales[k]; rad = radii[k];",
+  "      } else if (uGhostMode == 3){",
+  "        gc = 0.5 + (sunUv - 0.5) * (0.82 - fk * 0.235);",
+  "        rad = 0.030 + 0.013 * (0.5 + 0.5 * sin(fk * 2.3));",
+  "        tint = 0.55 + 0.45 * cos(fk * 0.9 + vec3(0.0, 2.1, 4.2));",
+  "        alpha = 0.85;",
+  "      } else if (uGhostMode == 4){",
+  "        if (k > 2) break;",
+  "        float sc4 = k == 0 ? 1.0 : (k == 1 ? 0.5 : -0.4);",
+  "        gc = 0.5 + (0.5 - sunUv) * sc4;",
+  "        rad = k == 0 ? 0.12 : (k == 1 ? 0.06 : 0.09);",
+  "        tint = vec3(1.0, 0.85, 0.62); alpha = 0.5;",
+  "      } else if (uGhostMode == 5){",
+  "        if (k > 1) break;",
+  "        gc = 0.5 + (0.5 - sunUv) * (k == 0 ? 0.9 : -0.5);",
+  "        rad = k == 0 ? 0.07 : 0.05;",
+  "        tint = k == 0 ? vec3(0.9, 0.5, 0.8) : vec3(0.5, 0.9, 0.6);",
+  "        alpha = 0.35;",
+  "      } else { break; }",
+  "      vec2 dq = (vUv - gc) * vec2(uAspect, 1.0);",
+  "      float dd = length(dq);",
+  "      float ring = smoothstep(0.016, 0.0, abs(dd - rad));",
+  "      float disc = smoothstep(rad, rad * 0.55, dd) * 0.16;",
+  "      if (uGhostMode == 1){",
+  "        float a = atan(dq.y, dq.x);",
+  "        tint = 0.55 + 0.45 * cos(a + vec3(0.0, 2.1, 4.2) + fk * 1.3);",
+  "      }",
+  "      col += tint * (ring * 0.55 + disc) * alpha * uGhostAmt * uSun.z;",
+  "    }",
+  "  }",
+  "  /* ベール（逆光で画面に広がる優しいかぶり） */",
+  "  if (uVeil > 0.001 && uSun.z > 0.001){",
+  "    vec2 sq = (sunUv - 0.5) * vec2(uAspect, 1.0);",
+  "    float facing = length(sq) > 0.01 ? clamp(dot(normalize(q), normalize(sq)) * 0.5 + 0.5, 0.0, 1.0) : 0.5;",
+  "    col += vec3(1.0, 0.95, 0.88) * (uVeil * uSun.z * (0.25 + 0.75 * pow(facing, 2.0)) * 0.30);",
+  "  }",
+  "  /* 光芒（光源から伸びる6本のすじ） */",
+  "  if (uStarburst > 0.001 && uSun.z > 0.001){",
+  "    vec2 dq2 = (vUv - sunUv) * vec2(uAspect, 1.0);",
+  "    float d2 = length(dq2);",
+  "    float ang = atan(dq2.y, dq2.x);",
+  "    float spikes = pow(0.5 + 0.5 * cos(ang * 6.0), 24.0);",
+  "    col += vec3(1.0, 0.95, 0.85) * spikes * exp(-d2 * 5.5) * uStarburst * uSun.z * 0.8;",
+  "  }",
+  "  /* 周辺減光 */",
+  "  float r = length(q);",
+  "  col *= 1.0 - uVig * pow(smoothstep(0.30, 1.02, r), 1.6);",
+  "  /* 色調 */",
+  "  float l = lum(col);",
+  "  col = mix(col, vec3(l), uPastel * smoothstep(0.55, 1.0, l));",
+  "  col = (col - 0.5) * uContrast + 0.5;",
+  "  col = col * (1.0 - uLift * 0.4) + uLift * (1.0 - col) * 0.28;",
+  "  col *= uTint;",
+  "  float l3 = lum(col);",
+  "  col = mix(vec3(l3), col, uSat);",
+  "  gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);",
+  "}",
+].join("\n");
+
+  function makeProg(fs) {
+    const vs = gl.createShader(gl.VERTEX_SHADER);
+    gl.shaderSource(vs, VS); gl.compileShader(vs);
+    const f = gl.createShader(gl.FRAGMENT_SHADER);
+    gl.shaderSource(f, fs); gl.compileShader(f);
+    if (!gl.getShaderParameter(f, gl.COMPILE_STATUS)) throw new Error("shader: " + gl.getShaderInfoLog(f));
+    const pr = gl.createProgram();
+    gl.attachShader(pr, vs); gl.attachShader(pr, f); gl.linkProgram(pr);
+    return pr;
+  }
+  let progBlur, progFinish;
+  try { progBlur = makeProg(FS_BLUR); progFinish = makeProg(FS_FINISH); }
+  catch (e) { view.remove(); if (bvCopy) bvCopy.remove(); return api; }
+  const quad = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+  function bindQuad(pr) {
+    const loc = gl.getAttribLocation(pr, "p");
+    gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+  }
+  function makeTex() {
+    const t = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, t);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    return t;
+  }
+  const texColor = makeTex(), texDepth = makeTex();
+  let rtTex = null, rtFb = null;
+  function ensureRT(w, h) {
+    if (rtTex) { gl.deleteTexture(rtTex); gl.deleteFramebuffer(rtFb); }
+    rtTex = makeTex();
+    gl.bindTexture(gl.TEXTURE_2D, rtTex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    rtFb = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, rtFb);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, rtTex, 0);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  }
+  function depthT(m) {
+    if (!isFinite(m)) return 1;
+    return Math.max(0, Math.min(1, Math.log(m / 0.5) / Math.log(400)));
+  }
+  function focusMeters() { return DISTS[state.focusIdx]; }
+  function lensParams() {
+    const L = LENSES[state.lens];
+    const F = APS[state.apIdx];
+    const fRatio = L.stops[0] / F;
+    return {
+      F, fRatio,
+      coc: 2.2 * Math.pow(fRatio, L.cocPow || 1) * (L.cocMul || 1),
+      lemon: (L.lemon || 0) * fRatio,
+      veil: (L.veil || 0) * fRatio,
+      starburst: (L.starburst || 0) * (1.15 - 0.65 * fRatio),
+      sat: L.sat || 1,
+      swirl: L.swirl, curve: L.curve, ring: Math.min(1, L.ring),
+      glow: L.glow * (0.55 + 0.45 * fRatio),
+      vig: L.vig * (0.4 + 0.6 * fRatio),
+      ca: L.ca * (0.35 + 0.65 * fRatio),
+      ghostAmt: L.ghostAmt, ghostMode: L.ghostMode,
+      tint: L.tint, contrast: L.contrast, lift: L.lift, pastel: L.pastel,
+    };
+  }
+  function renderTo(w, h) {
+    const P = lensParams();
+    const aspect = w / h;
+    ensureRT(w, h);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, rtFb);
+    gl.viewport(0, 0, w, h);
+    gl.useProgram(progBlur);
+    bindQuad(progBlur);
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, texColor);
+    gl.uniform1i(gl.getUniformLocation(progBlur, "uTex"), 0);
+    gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, texDepth);
+    gl.uniform1i(gl.getUniformLocation(progBlur, "uDepth"), 1);
+    gl.uniform1f(gl.getUniformLocation(progBlur, "uFocusT"), depthT(focusMeters()));
+    gl.uniform1f(gl.getUniformLocation(progBlur, "uCurve"), P.curve * P.fRatio);
+    gl.uniform1f(gl.getUniformLocation(progBlur, "uCoC"), P.coc);
+    gl.uniform1f(gl.getUniformLocation(progBlur, "uMaxR"), 0.042);
+    gl.uniform1f(gl.getUniformLocation(progBlur, "uSwirl"), P.swirl);
+    gl.uniform1f(gl.getUniformLocation(progBlur, "uLemon"), P.lemon);
+    gl.uniform1f(gl.getUniformLocation(progBlur, "uRing"), P.ring);
+    gl.uniform1f(gl.getUniformLocation(progBlur, "uAspect"), aspect);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(0, 0, w, h);
+    gl.useProgram(progFinish);
+    bindQuad(progFinish);
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, rtTex);
+    gl.uniform1i(gl.getUniformLocation(progFinish, "uTex"), 0);
+    gl.uniform1f(gl.getUniformLocation(progFinish, "uAspect"), aspect);
+    gl.uniform1f(gl.getUniformLocation(progFinish, "uGlow"), P.glow);
+    gl.uniform1f(gl.getUniformLocation(progFinish, "uVig"), P.vig);
+    gl.uniform1f(gl.getUniformLocation(progFinish, "uCA"), P.ca);
+    gl.uniform1f(gl.getUniformLocation(progFinish, "uGhostAmt"), P.ghostAmt);
+    gl.uniform1i(gl.getUniformLocation(progFinish, "uGhostMode"), P.ghostMode);
+    gl.uniform1f(gl.getUniformLocation(progFinish, "uPastel"), P.pastel);
+    gl.uniform1f(gl.getUniformLocation(progFinish, "uContrast"), P.contrast);
+    gl.uniform1f(gl.getUniformLocation(progFinish, "uLift"), P.lift);
+    gl.uniform1f(gl.getUniformLocation(progFinish, "uVeil"), P.veil);
+    gl.uniform1f(gl.getUniformLocation(progFinish, "uStarburst"), P.starburst);
+    gl.uniform1f(gl.getUniformLocation(progFinish, "uSat"), P.sat);
+    gl.uniform3f(gl.getUniformLocation(progFinish, "uTint"), P.tint[0], P.tint[1], P.tint[2]);
+    gl.uniform3f(gl.getUniformLocation(progFinish, "uSun"), api.sun.x, 1 - api.sun.y, api.sun.strength);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  }
+  /* ---- ソース（映像→カラー／深度） ---- */
+  const colorC = document.createElement("canvas");
+  const depthC = document.createElement("canvas");
+  const detectC = document.createElement("canvas"); detectC.width = 64; detectC.height = 48;
+  const detectCtx = detectC.getContext("2d", { willReadFrequently: true });
+  function drawCover(ctx, video, W, H) {
+    const vw = video.videoWidth, vh = video.videoHeight;
+    if (!vw || !vh) return false;
+    const va = vw / vh, ta = W / H;
+    let sw, sh, sx, sy;
+    if (va > ta) { sh = vh; sw = vh * ta; sx = (vw - sw) / 2; sy = 0; }
+    else { sw = vw; sh = vw / ta; sx = 0; sy = (vh - sh) / 2; }
+    ctx.drawImage(video, sx, sy, sw, sh, 0, 0, W, H);
+    return true;
+  }
+  function paintDepth(ctx, W, H) {
+    const fT = depthT(focusMeters());
+    const g0 = Math.round(fT * 255);
+    const g1 = Math.round(g0 + (255 - g0) * 0.55);
+    ctx.fillStyle = "rgb(255,255,255)";
+    ctx.fillRect(0, 0, W, H);
+    const spread = 0.25 + 0.55 * (1 - fT);
+    const R = spread * Math.hypot(W, H);
+    const gr = ctx.createRadialGradient(0.5 * W, 0.45 * H, 0, 0.5 * W, 0.45 * H, R);
+    gr.addColorStop(0, "rgb(" + g0 + "," + g0 + "," + g0 + ")");
+    gr.addColorStop(0.65, "rgb(" + g1 + "," + g1 + "," + g1 + ")");
+    gr.addColorStop(1, "rgb(255,255,255)");
+    ctx.fillStyle = gr;
+    ctx.fillRect(0, 0, W, H);
+  }
+  function upload(w, h) {
+    const v = $("v-m6");
+    colorC.width = w; colorC.height = h;
+    if (!drawCover(colorC.getContext("2d"), v, w, h)) return false;
+    depthC.width = Math.max(2, w >> 1); depthC.height = Math.max(2, h >> 1);
+    paintDepth(depthC.getContext("2d"), depthC.width, depthC.height);
+    gl.bindTexture(gl.TEXTURE_2D, texColor);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, colorC);
+    gl.bindTexture(gl.TEXTURE_2D, texDepth);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, depthC);
+    return true;
+  }
+  function detectSun() {
+    try {
+      const v = $("v-m6");
+      detectCtx.drawImage(v, 0, 0, 64, 48);
+      const d = detectCtx.getImageData(0, 0, 64, 48).data;
+      let sx = 0, sy = 0, sw = 0, bright = 0;
+      for (let y = 0; y < 48; y++) for (let x = 0; x < 64; x++) {
+        const i = (y * 64 + x) * 4;
+        const lum = (d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114) / 255;
+        if (lum > 0.88) { const wgt = lum - 0.88; sx += x * wgt; sy += y * wgt; sw += wgt; bright++; }
+      }
+      const S = api.sun;
+      if (sw > 0.5) {
+        S.x += ((sx / sw) / 63 - S.x) * 0.3;
+        S.y += ((sy / sw) / 47 - S.y) * 0.3;
+        S.strength += (Math.min(1, bright / 60) - S.strength) * 0.3;
+      } else {
+        S.strength += (0 - S.strength) * 0.1;
+      }
+    } catch (e) {}
+  }
+  /* ---- ライブループ（負荷に応じて解像度を自動調整） ---- */
+  let shown = false, lastRender = 0;
+  const TIERS = [1080, 800, 600, 480];
+  let tier = 1, frameMs = 0, frameN = 0, goodWindows = 0;
+  function loop(ts) {
+    requestAnimationFrame(loop);
+    if (!state.camOk || state.uiMode !== "shoot") return;
+    if (ts - lastRender < 33) return; /* 最大でも毎秒30コマに抑える */
+    lastRender = ts;
+    const src = state.mode === "barnack" ? document.querySelector(".b-win.vf2") : $("vf-m6");
+    if (!src) return;
+    const cw = src.clientWidth, ch = src.clientHeight;
+    if (!cw || !ch) return;
+    const bw = Math.min(TIERS[tier], Math.round(cw * 1.5)), bh = Math.round(bw * ch / cw);
+    if (view.width !== bw || view.height !== bh) { view.width = bw; view.height = bh; }
+    const t0 = performance.now();
+    if (!upload(bw, bh)) return;
+    detectSun();
+    renderTo(bw, bh);
+    frameMs += performance.now() - t0; frameN++;
+    if (frameN >= 45) {
+      const avg = frameMs / frameN;
+      frameMs = 0; frameN = 0;
+      if (avg > 26 && tier < TIERS.length - 1) { tier++; goodWindows = 0; }
+      else if (avg < 9 && tier > 0) { if (++goodWindows >= 2) { tier--; goodWindows = 0; } }
+      else goodWindows = 0;
+    }
+    api.frames++;
+    if (!shown) { shown = true; view.style.visibility = "visible"; if (bvCopy) bvCopy.style.visibility = "visible"; }
+    if (state.mode === "barnack" && bvCtx) {
+      if (bvCopy.width !== bw || bvCopy.height !== bh) { bvCopy.width = bw; bvCopy.height = bh; }
+      bvCtx.drawImage(view, 0, 0, bw, bh);
+    }
+  }
+  /* ---- 撮影（フル解像度で描き直し） ---- */
+  function renderCapture(ctx, W, H) {
+    if (!api.ready) return false;
+    try {
+      if (!upload(W, H)) return false;
+      view.width = W; view.height = H;
+      renderTo(W, H);
+      ctx.drawImage(view, 0, 0, W, H);
+      return true;
+    } catch (e) { return false; }
+  }
+  /* ---- レンズ選択 ---- */
+  function setLens(id) {
+    if (!LENSES[id]) return;
+    const prevF = APS[state.apIdx];
+    state.lens = id;
+    const stops = LENSES[id].stops;
+    let best = stops[0], bd = Infinity;
+    for (const s of stops) { const d = Math.abs(Math.log2(s / prevF)); if (d < bd) { bd = d; best = s; } }
+    state.apIdx = APS.indexOf(best);
+    buildApRow();
+    segSelect("ap-row", "ap", state.apIdx);
+    applyFocal();
+    $("lens-name").textContent = LENSES[id].label;
+    $("lens-desc").innerHTML = LENSES[id].desc;
+    for (const b of $("lens-list").querySelectorAll(".lens-card")) b.classList.toggle("sel", b.dataset.lens === id);
+    save();
+  }
+  api.ready = true;
+  requestAnimationFrame(loop);
+  return api;
+})();
+window.LensGL = LensGL;
+
+/* テスト用フック（名玉統合） */
+window.__fc4 = { LensGL, setLens: id => LensGL.setLens(id) };
+</script>
+</body>
 </body>
 </html>
