@@ -168,6 +168,7 @@ input[type=range]{width:100%;height:44px;accent-color:var(--red);cursor:pointer}
 .chamber-empty{text-align:center;padding:12px 0 4px}
 .chamber-empty .ce-big{display:block;font-size:1.45rem;font-weight:700;color:var(--ink);letter-spacing:.1em}
 .chamber-empty .ce-sub{display:block;font-size:.9rem;color:var(--dim);margin-top:3px}
+.chamber-note{margin:10px auto 0;max-width:340px;font-size:.8rem;line-height:1.55;color:var(--amber);border:1px solid rgba(216,164,65,.45);border-radius:8px;padding:7px 10px;text-align:left}
 .cart{margin:0 auto;max-width:340px;border-radius:12px;padding:12px 14px;text-align:center;color:#141416;box-shadow:0 4px 10px rgba(0,0,0,.55)}
 .cart .cart-name{font-family:Georgia,serif;font-size:1.2rem;font-weight:bold;letter-spacing:.04em}
 .cart .cart-sub{font-size:.78rem;margin-top:2px}
@@ -846,6 +847,51 @@ async function startCamera() {
     if (r) r.addEventListener("click", startCamera);
   }
 }
+/* 端末の傾き（重力センサー）：写真の向きを決めるために常時受け取る。
+   実機（iPhone・回転ロック中）では映像バッファは常に縦長で、中身だけが端末の傾きに
+   合わせて回って届く。画面の向きAPIはロック中ずっと縦のままなので使えない */
+state.tilt = { beta: null, gamma: null };
+let tiltListening = false, tiltAsked = false;
+function startTilt() {
+  if (tiltListening) return;
+  tiltListening = true;
+  window.addEventListener("deviceorientation", e => {
+    if (e && e.beta !== null && e.gamma !== null) { state.tilt.beta = e.beta; state.tilt.gamma = e.gamma; }
+  });
+}
+function ensureTiltPermission() {
+  /* iOS ではセンサーの許可が要る（ボタン操作の中でだけ求められる） */
+  if (typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function") {
+    if (tiltAsked) return;
+    tiltAsked = true;
+    DeviceOrientationEvent.requestPermission().then(r => { if (r === "granted") startTilt(); }).catch(() => {});
+  } else startTilt();
+}
+if (!(typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function")) startTilt();
+/* 映像が止まったら自動で立て直す（実機でファインダーが固まる件の対策）：
+   撮影モードにいる間、映像の時計（currentTime）が進んでいるかを毎秒見張り、
+   一時停止していたら再生をかけ直し、止まったままならカメラ自体を取り直す */
+(function camWatchdog() {
+  const IDS = ["v-m6", "v-patch", "v-br", "v-br-ghost", "v-bv"];
+  const playAll = () => { for (const id of IDS) { const x = $(id); if (x && x.paused) x.play().catch(() => {}); } };
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && state.camOk) playAll(); });
+  let lastCT = -1, stallN = 0, lastRestartAt = 0;
+  setInterval(() => {
+    if (!state.camOk || state.uiMode !== "shoot" || document.hidden) return;
+    const v = $("v-m6");
+    if (!v) return;
+    if (v.paused) { playAll(); return; }
+    const ct = v.currentTime;
+    if (lastCT >= 0 && ct === lastCT && v.readyState >= 2) {
+      stallN++;
+      if (stallN >= 2 && performance.now() - lastRestartAt > 10000) {
+        lastRestartAt = performance.now(); stallN = 0; lastCT = -1;
+        startCamera();
+      }
+    } else stallN = 0;
+    lastCT = ct;
+  }, 1000);
+})();
 function meterCalc() {
   const lum = state.lumOverride !== null ? state.lumOverride : state.lum;
   const ev100 = Math.log2(Math.max(lum, 0.004)) + 10.3;
@@ -921,7 +967,7 @@ function setUiMode(m) {
   window.scrollTo(0, 0);
 }
 $("btn-to-settings").addEventListener("click", () => setUiMode("settings"));
-$("btn-to-shoot").addEventListener("click", () => setUiMode("shoot"));
+$("btn-to-shoot").addEventListener("click", () => { ensureTiltPermission(); setUiMode("shoot"); });
 
 /* ================= 初期化 ================= */
 (function init() {
@@ -1099,19 +1145,33 @@ function applyFilmSim(ctx, W, H, film) {
 }
 
 /* ---- 撮影 ---- */
+/* 素の経路用の回転描画（GLの drawCover と同じ作法） */
+function drawVideoRotated(ctx, v, W, H, q) {
+  const vw = v.videoWidth, vh = v.videoHeight;
+  if (!q) { ctx.drawImage(v, 0, 0, W, H); return; }
+  const ew = (q % 2 === 1) ? vh : vw, eh = (q % 2 === 1) ? vw : vh;
+  const s = Math.max(W / ew, H / eh);
+  ctx.save();
+  ctx.translate(W / 2, H / 2);
+  ctx.rotate(q * Math.PI / 2);
+  ctx.drawImage(v, -vw * s / 2, -vh * s / 2, vw * s, vh * s);
+  ctx.restore();
+}
 function capturePhoto() {
   const F = filmState, film = filmOf(F.id), frame = F.frameNo;
   if (!state.camOk) { hint("カメラが起動していないため、この1枚は保存されませんでした"); return; }
   const v = $("v-m6");
   if (!v.videoWidth) return;
-  /* 向きは映像バッファのまま（実機ではバッファが端末の向きに追随して正立する） */
+  /* 向き：撮影の瞬間の端末の傾きから回転量を求め、横構えでは寸法を入れ替えて横長で保存する */
+  const q = window.LensGL ? window.LensGL.orientQ() : 0;
   let W = v.videoWidth, H = v.videoHeight;
+  if (q % 2 === 1) { const t = W; W = H; H = t; }
   const MAX = 2560, sc = Math.min(1, MAX / Math.max(W, H));
   W = Math.max(2, Math.round(W * sc)); H = Math.max(2, Math.round(H * sc));
   const c = document.createElement("canvas"); c.width = W; c.height = H;
   const ctx = c.getContext("2d");
   if (!(window.LensGL && window.LensGL.renderCapture(ctx, W, H))) {
-    ctx.drawImage(v, 0, 0, W, H);
+    drawVideoRotated(ctx, v, W, H, q);
   }
   applyFilmSim(ctx, W, H, film);
   const rec = { rollId: F.rollId, frame, filmId: film.id, ts: Date.now(), ss: ssLabel(), ap: APS[state.apIdx], iso: state.iso, focal: state.focal, lens: state.lens, lensName: LENSES[state.lens].label, w: W, h: H };
@@ -1131,7 +1191,9 @@ function updateFilmUI() {
     $("memo-sub").textContent = "フィルムは入っていません";
   } else if (F.stage === "blank") {
     $("memo-film").textContent = film.name + "（装填中）";
-    $("memo-sub").textContent = "底蓋を閉めて、空シャッターをあと " + (2 - F.blanks) + " 回切ってください";
+    $("memo-sub").textContent = coverOpenFlag
+      ? "底蓋を閉めて、空シャッターをあと " + (2 - F.blanks) + " 回切ってください"
+      : "空シャッターをあと " + (2 - F.blanks) + " 回切ってください";
     $("counter").textContent = "000";
   } else if (F.stage === "ready") {
     $("memo-film").textContent = film.name;
@@ -1139,12 +1201,14 @@ function updateFilmUI() {
     $("counter").textContent = String(F.frameNo).padStart(3, "0");
   } else if (F.stage === "finished") {
     $("memo-film").textContent = film.name + "（撮り切り）";
-    $("memo-sub").textContent = "現像室で見られます。取り出しは底蓋を開けて";
+    $("memo-sub").textContent = "現像室で見られます。取り出しは巻き戻してから";
     $("counter").textContent = String(F.frames).padStart(3, "0");
   }
   $("lock-cap").textContent = coverOpenFlag ? "底蓋は開いています" : "底蓋は閉まっています（ロック中）";
   $("lock-cap").classList.toggle("open", coverOpenFlag);
-  $("lock-help").textContent = coverOpenFlag ? "丸いキーを押すと、底蓋が閉まります" : "丸いキーを押すと、底蓋が開きます";
+  $("lock-help").textContent = coverOpenFlag
+    ? ((F.stage === "ready" || F.stage === "finished") ? "取り出すときは、下の「巻き戻して取り出す」を押してください" : "丸いキーを押すと、底蓋が閉まります")
+    : ((F.stage === "ready" || F.stage === "finished") ? "フィルムが入っています。取り出すときは、先に巻き戻してください" : "丸いキーを押すと、底蓋が開きます");
   $("btn-lock").classList.toggle("open", coverOpenFlag);
 }
 function renderChamber() {
@@ -1158,6 +1222,7 @@ function renderChamber() {
       '<div class="cart" style="background:' + film.color + ";color:" + film.text + '">' +
       '<div class="cart-name">' + film.name + '</div>' +
       '<div class="cart-sub">ISO ' + film.iso + " ・ " + film.kind + " ・ " + F.frames + "枚撮り（" + F.exposed + "枚撮影済み）</div></div>" +
+      ((F.stage === "ready" || F.stage === "finished") ? '<div class="chamber-note">実機では、巻き戻す前に底蓋を開けるとフィルムが感光します。取り出すときは、巻き戻しからが作法です。</div>' : "") +
       '<button type="button" class="ghost-btn" id="btn-remove">巻き戻して取り出す</button>';
     $("btn-remove").addEventListener("click", () => {
       if (confirm("巻き戻して取り出しますか？（撮った写真は端末に残ります）")) removeFilm();
@@ -1171,6 +1236,8 @@ function removeFilm() {
   renderChamber(); updateFilmUI();
   renderRolls();
   hint("フィルムを取り出しました。撮った写真は現像室で見られます");
+  /* 操作の結果（現像室に増えたロール）がその場で目に入るよう、設定画面では現像室まで寄せる */
+  if (state.uiMode === "settings") setTimeout(() => { const dr = $("darkroom"); if (dr) dr.scrollIntoView({ behavior: "smooth", block: "start" }); }, 80);
 }
 function doLoadFilm() {
   const film = filmOf(selFilmId);
@@ -1412,7 +1479,7 @@ const LensGL = (() => {
   setLens(LENSES[state.lens] ? state.lens : "lux");
   let gl = null;
   try { gl = view.getContext("webgl", { preserveDrawingBuffer: true, antialias: false }); } catch (e) {}
-  const api = { ready: false, frames: 0, setLens, params: lensParams, renderCapture, orientQ, sun: { x: 0.5, y: 0.4, strength: 0 } };
+  const api = { ready: false, frames: 0, contextLost: false, setLens, params: lensParams, renderCapture, orientQ, sun: { x: 0.5, y: 0.4, strength: 0 } };
   if (!gl) { view.remove(); if (bvCopy) bvCopy.remove(); return api; }
 
   const VS = "attribute vec2 p; varying vec2 vUv; void main(){ vUv = p * 0.5 + 0.5; gl_Position = vec4(p, 0.0, 1.0); }";
@@ -1579,12 +1646,8 @@ const FS_FINISH = [
     gl.attachShader(pr, vs); gl.attachShader(pr, f); gl.linkProgram(pr);
     return pr;
   }
-  let progBlur, progFinish;
-  try { progBlur = makeProg(FS_BLUR); progFinish = makeProg(FS_FINISH); }
-  catch (e) { view.remove(); if (bvCopy) bvCopy.remove(); return api; }
-  const quad = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, quad);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+  let progBlur, progFinish, quad, texColor, texDepth;
+  let rtTex = null, rtFb = null;
   function bindQuad(pr) {
     const loc = gl.getAttribLocation(pr, "p");
     gl.bindBuffer(gl.ARRAY_BUFFER, quad);
@@ -1600,8 +1663,17 @@ const FS_FINISH = [
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     return t;
   }
-  const texColor = makeTex(), texDepth = makeTex();
-  let rtTex = null, rtFb = null;
+  /* GL資源の生成。コンテキスト復帰時にも同じ手順で作り直せるよう関数にまとめる */
+  function initGL() {
+    progBlur = makeProg(FS_BLUR); progFinish = makeProg(FS_FINISH);
+    quad = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+    texColor = makeTex(); texDepth = makeTex();
+    rtTex = null; rtFb = null;
+  }
+  try { initGL(); }
+  catch (e) { view.remove(); if (bvCopy) bvCopy.remove(); return api; }
   function ensureRT(w, h) {
     if (rtTex) { gl.deleteTexture(rtTex); gl.deleteFramebuffer(rtFb); }
     rtTex = makeTex();
@@ -1691,10 +1763,17 @@ const FS_FINISH = [
   /* ---- 向き：映像バッファを端末の向きに合わせて正す回転量（時計回り・90度単位） ---- */
   let curQ = 0;
   function orientQ() {
-    /* 実機(iPhone)では、映像バッファそのものが端末の向きに追随し、中身は常に正立して届く。
-       一方で角度API（screen.orientation.angle）は「縦向きロック」時に 0 のまま止まり、
-       バッファと食い違う。v14 ではその食い違いから、横向き撮影の写真を回転させて壊した。
-       向きはバッファを正として、回転補正は一切しない（常に 0）。 */
+    /* 向きは端末の傾き（重力センサー）で決める。映像バッファは実機では常に縦長で、
+       中身が端末の回転と逆向きに回って届くので、撮影の瞬間の傾きから
+       「中身を正立させる回転量（時計回り・90度単位）」を求める。
+       画面の向きAPI（screen.orientation）は回転ロック中にバッファと食い違うため使わない。
+       gamma が正（上辺が右に倒れた横構え）→ 中身は反時計回りに回っている → q=1 で戻す。
+       gamma が負（上辺が左）→ q=3。beta が負（逆さの縦持ち）→ q=2。 */
+    const t = state.tilt;
+    if (!t || t.beta === null || t.gamma === null) return 0;
+    const ab = Math.abs(t.beta), ag = Math.abs(t.gamma);
+    if (ag >= 45 && ag >= ab) return t.gamma > 0 ? 1 : 3;
+    if (ab >= 45 && t.beta < 0) return 2;
     return 0;
   }
   function drawCover(ctx, video, W, H, q) {
@@ -1774,6 +1853,7 @@ const FS_FINISH = [
   function loop(ts) {
     requestAnimationFrame(loop);
     if (!state.camOk || state.uiMode !== "shoot") return;
+    if (api.contextLost) return; /* GL喪失中は素の映像ファインダーに任せる */
     if (ts - lastRender < 33) return; /* 最大でも毎秒30コマに抑える */
     lastRender = ts;
     const src = state.mode === "barnack" ? document.querySelector(".b-win.vf2") : $("vf-m6");
@@ -1803,7 +1883,7 @@ const FS_FINISH = [
   }
   /* ---- 撮影（フル解像度で描き直し） ---- */
   function renderCapture(ctx, W, H) {
-    if (!api.ready) return false;
+    if (!api.ready || api.contextLost) return false;
     try {
       if (!upload(W, H)) return false;
       view.width = W; view.height = H;
@@ -1835,6 +1915,21 @@ const FS_FINISH = [
     for (const b of $("lens-list").querySelectorAll(".lens-card")) b.classList.toggle("sel", b.dataset.lens === id);
     save();
   }
+  /* ---- WebGLコンテキスト喪失への備え ----
+     実機では、メモリ圧迫などでGLコンテキストが失われると、キャンバスが最後の1枚を
+     表示し続けてファインダーが固まったように見える。喪失を検知したらGL表示を隠して
+     下の素の映像ファインダーに切り替え、復帰したらGL資源を作り直して自動で戻る */
+  view.addEventListener("webglcontextlost", e => {
+    e.preventDefault(); /* これをしないと復帰イベントが来ない */
+    api.contextLost = true;
+    shown = false;
+    view.style.visibility = "hidden";
+    if (bvCopy) bvCopy.style.visibility = "hidden";
+  });
+  view.addEventListener("webglcontextrestored", () => {
+    try { initGL(); } catch (err) {}
+    api.contextLost = false;
+  });
   api.ready = true;
   requestAnimationFrame(loop);
   return api;
