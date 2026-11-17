@@ -236,24 +236,71 @@ body.mode-shoot #shoot-ctl-wrap .ctl{margin-top:10px}
   body.mode-shoot #app{max-width:1020px}
   #mode-bar{padding:0 2px 6px}
   #mode-bar button{min-height:40px;padding:4px 16px}
-  body.mode-shoot #shoot-screen{display:grid;grid-template-columns:minmax(0,1fr) 252px;grid-template-rows:repeat(4,auto);gap:10px;overflow-y:auto;align-content:start}
-  body.mode-shoot .top-plate{grid-column:2;grid-row:1;flex-direction:column;align-items:stretch;gap:4px;margin:0;padding:8px 10px}
-  body.mode-shoot .dial-col,body.mode-shoot .wind-col{width:auto}
-  body.mode-shoot #dial{width:64px;height:64px}
-  body.mode-shoot .dial-label,body.mode-shoot .wind-label,body.mode-shoot .brand .sub,body.mode-shoot .brand .engrave{display:none}
-  body.mode-shoot .brand{order:-1;padding-top:0;min-width:0}
-  body.mode-shoot .brand .name{font-size:1.15rem}
-  body.mode-shoot #ss-read{font-size:1.05rem;min-height:1.3em}
-  body.mode-shoot #charge-state{font-size:.68rem}
-  body.mode-shoot #finder-area{grid-column:1;grid-row:1 / span 4;position:sticky;top:0;height:calc(100dvh - 128px)}
+  /* 横持ちを正式な姿に：左にファインダーを大きく、右に軍艦部と操作を上から並べる。撮影画面はスクロールさせない */
+  body.mode-shoot #shoot-screen{display:grid;grid-template-columns:minmax(0,1fr) 268px;grid-template-rows:auto auto auto minmax(0,1fr);gap:6px 10px;overflow:hidden;align-content:stretch}
+  body.mode-shoot{padding:6px 10px calc(6px + env(safe-area-inset-bottom))}
+  #mode-bar button{min-height:36px}
+  body.mode-shoot #finder-area{grid-column:1;grid-row:1 / span 4;min-height:0;align-self:stretch}
+  body.mode-shoot .top-plate{grid-column:2;grid-row:1;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-content:start;margin:0;padding:6px 10px}
+  body.mode-shoot .brand{grid-column:1 / -1;grid-row:1;padding:0;min-width:0;text-align:left}
+  body.mode-shoot .brand .name{font-size:1.12rem}
+  body.mode-shoot .brand .sub,body.mode-shoot .brand .engrave{display:none}
+  body.mode-shoot #shoot-status{display:block}
+  body.mode-shoot #lens-name{margin-top:2px}
+  body.mode-shoot .dial-col{grid-column:1;grid-row:2;width:auto;justify-self:start}
+  body.mode-shoot #dial{width:56px;height:56px}
+  body.mode-shoot .dial-label{display:none}
+  body.mode-shoot #ss-read{font-size:1rem;min-height:1.25em}
+  body.mode-shoot .wind-col,body.mode-shoot .wind-row{display:contents}
+  body.mode-shoot #btn-shutter{grid-column:2;grid-row:2;align-self:center;justify-self:end;width:56px;height:56px}
+  body.mode-shoot #btn-wind{grid-column:1;grid-row:3;justify-self:start;margin-left:6px}
+  body.mode-shoot #counter{grid-column:2;grid-row:3;align-self:center;min-width:64px;text-align:center}
+  body.mode-shoot .wind-label{display:none}
+  body.mode-shoot #charge-state{grid-column:1 / -1;grid-row:4;font-size:.68rem;text-align:left}
   body.mode-shoot #shoot-ctl-wrap{grid-column:2;grid-row:2}
-  body.mode-shoot #cam-msg{grid-column:2;grid-row:3}
-  body.mode-shoot #hint{grid-column:2;grid-row:4}
+  body.mode-shoot #shoot-ctl-wrap .ctl{margin-top:5px;padding:6px 10px}
+  body.mode-shoot #shoot-ctl-wrap .ctl h2{font-size:.68rem;margin:0 0 3px;letter-spacing:.14em}
+  body.mode-shoot #shoot-ctl-wrap .ctl:first-child h2{display:none}
+  body.mode-shoot #shoot-ctl-wrap .seg button{min-height:38px;min-width:0;flex:1 1 0;padding:4px 1px;font-size:.85rem}
+  body.mode-shoot #focus-range{height:30px}
+  body.mode-shoot .focus-scale{display:none}
+  body.mode-shoot #cam-msg{grid-column:2;grid-row:3;margin-top:0}
+  body.mode-shoot #hint{grid-column:2;grid-row:4;margin-top:0;min-height:0;align-self:end}
+}
+/* 横持ち・低丈（電話の横向き）では各部を詰めて、スクロールなしに収める */
+@media (orientation:landscape) and (max-height:430px){
+  body.mode-shoot{padding:5px 10px calc(5px + env(safe-area-inset-bottom))}
+  #mode-bar{padding:0 2px 4px}
+  #mode-bar button{min-height:34px}
+  body.mode-shoot #shoot-screen{gap:5px 10px}
+  body.mode-shoot .top-plate{padding:5px 10px;gap:1px 10px}
+  body.mode-shoot .brand .name{font-size:1.02rem}
+  body.mode-shoot #lens-name{margin-top:1px;font-size:.64rem}
+  body.mode-shoot #shoot-status{margin-top:0;font-size:.64rem}
+  body.mode-shoot .dial-col{display:flex;align-items:center;gap:8px}
+  body.mode-shoot #dial{width:52px;height:52px}
+  body.mode-shoot #ss-read{font-size:.95rem;margin:0}
+  body.mode-shoot #btn-shutter{width:52px;height:52px}
+  body.mode-shoot #btn-wind{height:36px}
+  body.mode-shoot #charge-state{font-size:.64rem}
+  body.mode-shoot #shoot-ctl-wrap .ctl{margin-top:4px;padding:4px 6px;background:none;border:none}
+  body.mode-shoot #shoot-ctl-wrap .ctl h2{margin:0 0 2px}
+  body.mode-shoot #shoot-ctl-wrap .seg button{min-height:36px}
+  body.mode-shoot #focus-range{height:26px}
+}
+@media (orientation:landscape) and (max-height:380px){
+  body.mode-shoot #dial{width:48px;height:48px}
+  body.mode-shoot #btn-shutter{width:48px;height:48px}
+  body.mode-shoot #shoot-ctl-wrap .seg button{min-height:32px;font-size:.8rem}
+  body.mode-shoot #focus-range{height:24px}
+  body.mode-shoot .top-plate{padding:4px 10px}
+  body.mode-shoot #charge-state{line-height:1.15}
 }
 /* ===== 名玉レンズ統合 ===== */
 #gl-view{position:absolute;inset:0;width:100%;height:100%;visibility:hidden}
 #bv-copy{position:absolute;inset:0;width:100%;height:100%;visibility:hidden}
 #lens-name{font-family:Georgia,serif;font-size:.68rem;color:var(--amber);letter-spacing:.06em;margin-top:5px}
+#shoot-status{display:none;font-size:.68rem;color:var(--dim);margin-top:3px;letter-spacing:.03em}
 #lens-list{display:flex;flex-direction:column;gap:6px}
 .lens-card{display:flex;align-items:center;gap:10px;width:100%;text-align:left;min-height:52px;border-radius:9px;border:1px solid #3c3c42;background:linear-gradient(180deg,#333338,#242428);color:var(--ink);cursor:pointer;padding:8px 12px}
 .lens-card .lc-main{flex:1}
@@ -301,6 +348,7 @@ html,body{overscroll-behavior:none}
       <div class="sub">FILM CAMERA</div>
       <div class="engrave" style="font-size:.66rem;margin-top:8px;letter-spacing:.2em">MADE FOR FILM LOVERS</div>
       <div id="lens-name">Wetzlar 50mm F1.4</div>
+      <div id="shoot-status">フィルム未装填</div>
     </div>
     <div class="wind-col">
       <div id="counter">000</div>
@@ -1210,6 +1258,11 @@ function updateFilmUI() {
     ? ((F.stage === "ready" || F.stage === "finished") ? "取り出すときは、下の「巻き戻して取り出す」を押してください" : "丸いキーを押すと、底蓋が閉まります")
     : ((F.stage === "ready" || F.stage === "finished") ? "フィルムが入っています。取り出すときは、先に巻き戻してください" : "丸いキーを押すと、底蓋が開きます");
   $("btn-lock").classList.toggle("open", coverOpenFlag);
+  const sst = $("shoot-status");
+  if (sst) sst.textContent = F.stage === "none" ? "フィルム未装填"
+    : F.stage === "blank" ? film.name + " ・ 空シャッター あと " + (2 - F.blanks) + " 回"
+    : F.stage === "ready" ? film.name + " ・ 残り " + (F.frames - F.exposed) + " 枚"
+    : film.name + " ・ 撮り切り";
 }
 function renderChamber() {
   const F = filmState, inner = $("chamber-inner");
