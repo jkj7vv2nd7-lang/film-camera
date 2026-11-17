@@ -158,12 +158,16 @@ input[type=range]{width:100%;height:44px;accent-color:var(--red);cursor:pointer}
 #btn-lock{flex:0 0 auto;width:62px;height:62px;border-radius:50%;border:none;cursor:pointer;position:relative;
   background:radial-gradient(circle at 38% 30%,#5c5c64,#2a2a2f 72%);box-shadow:0 4px 9px rgba(0,0,0,.6), inset 0 2px 3px rgba(255,255,255,.3)}
 #btn-lock .key{position:absolute;left:50%;top:50%;width:8px;height:34px;margin:-17px 0 0 -4px;border-radius:4px;background:linear-gradient(180deg,#d8d8de,#8f8f96);box-shadow:0 1px 2px rgba(0,0,0,.6);transition:transform .25s}
-#btn-lock.open .key{transform:rotate(90deg)}
+#btn-lock.open .key{transform:rotate(90deg);background:linear-gradient(180deg,#f4c87e,#c07f2a)}
+#btn-lock.open{box-shadow:0 0 0 3px var(--amber),0 4px 9px rgba(0,0,0,.6), inset 0 2px 3px rgba(255,255,255,.3)}
 #btn-lock:active{transform:translateY(1px)}
-.lock-cap{font-family:Georgia,serif;font-size:1rem;color:var(--ink);letter-spacing:.1em}
+.lock-cap{font-family:Georgia,serif;font-size:1.08rem;font-weight:700;color:var(--ink);letter-spacing:.06em}
+.lock-cap.open{color:var(--amber)}
 .lock-help{font-size:.74rem;color:var(--dim);margin-top:3px}
 #chamber{margin-top:12px;background:#0a0a0c;border:1px solid #333;border-radius:12px;padding:14px 12px;box-shadow:inset 0 3px 12px #000}
-.chamber-empty{text-align:center;color:var(--dim);font-size:.9rem;padding:8px 0 2px}
+.chamber-empty{text-align:center;padding:12px 0 4px}
+.chamber-empty .ce-big{display:block;font-size:1.45rem;font-weight:700;color:var(--ink);letter-spacing:.1em}
+.chamber-empty .ce-sub{display:block;font-size:.9rem;color:var(--dim);margin-top:3px}
 .cart{margin:0 auto;max-width:340px;border-radius:12px;padding:12px 14px;text-align:center;color:#141416;box-shadow:0 4px 10px rgba(0,0,0,.55)}
 .cart .cart-name{font-family:Georgia,serif;font-size:1.2rem;font-weight:bold;letter-spacing:.04em}
 .cart .cart-sub{font-size:.78rem;margin-top:2px}
@@ -401,14 +405,14 @@ html,body{overscroll-behavior:none}
 <div class="back-panel">
   <div class="memo-wrap">
     <div class="memo-label">MEMO HOLDER</div>
-    <div class="memo" id="memo-film">フィルム未装填</div>
-    <div class="memo-sub" id="memo-sub">底蓋を開けてフィルムを入れてください</div>
+    <div class="memo" id="memo-film">空っぽです</div>
+    <div class="memo-sub" id="memo-sub">フィルムは入っていません</div>
   </div>
   <div class="lock-row">
     <button id="btn-lock" type="button" aria-label="底蓋ロックキー"><span class="key"></span></button>
     <div>
-      <div class="lock-cap" id="lock-cap">底蓋ロック：CLOSE</div>
-      <div class="lock-help">丸いキーを押すと、底蓋が開閉します</div>
+      <div class="lock-cap" id="lock-cap">底蓋は閉まっています（ロック中）</div>
+      <div class="lock-help" id="lock-help">丸いキーを押すと、底蓋が開きます</div>
     </div>
   </div>
   <div id="chamber" hidden>
@@ -784,8 +788,37 @@ function renderFocus() {
   $("v-br-ghost").style.transform = `translateX(${dx * 0.6}px)`;
 }
 $("focus-range").addEventListener("input", e => { state.focusIdx = Number(e.target.value); renderFocus(); save(); });
-/* スライダー操作中に画面が流れないのは CSS の touch-action:none（#focus-range）が担う。
-   window 側で touchmove を止めるとスライダー自身のドラッグまで止まるため、ここでは何もしない */
+/* スライダーのドラッグ中に画面が流れないようにする（実機対策）：
+   指がスライダーにある間は、touchmove の既定動作（スクロールやラバーバンド）を止め、
+   スライダーの値は指の横位置からアプリ側で計算して反映する。
+   ブラウザ任せの追随に頼らないので、iPhone でも検証環境でも同じ動きになる。
+   マウスのドラッグは従来どおり標準の動きに任せる */
+(function focusDragDrive() {
+  const el = $("focus-range");
+  let drag = null;
+  el.addEventListener("pointerdown", e => {
+    if (e.pointerType === "mouse") return;
+    const r = el.getBoundingClientRect();
+    drag = { x: e.clientX, val: state.focusIdx, w: r.width || 1 };
+  });
+  window.addEventListener("touchmove", e => {
+    if (!drag) return;
+    e.preventDefault();
+    const t = e.touches[0];
+    if (!t) return;
+    const nv = Math.max(0, Math.min(10, Math.round(drag.val + (t.clientX - drag.x) / drag.w * 10)));
+    if (nv !== state.focusIdx) {
+      state.focusIdx = nv;
+      el.value = nv;
+      renderFocus(); save();
+    }
+  }, { passive: false });
+  const end = () => { drag = null; };
+  window.addEventListener("pointerup", end);
+  window.addEventListener("pointercancel", end);
+  window.addEventListener("touchend", end);
+  window.addEventListener("touchcancel", end);
+})();
 
 /* ================= カメラと測光 ================= */
 const sample = document.createElement("canvas"); sample.width = 32; sample.height = 18;
@@ -1071,16 +1104,14 @@ function capturePhoto() {
   if (!state.camOk) { hint("カメラが起動していないため、この1枚は保存されませんでした"); return; }
   const v = $("v-m6");
   if (!v.videoWidth) return;
-  const oq = (window.LensGL && window.LensGL.orientQ) ? window.LensGL.orientQ() : 0;
+  /* 向きは映像バッファのまま（実機ではバッファが端末の向きに追随して正立する） */
   let W = v.videoWidth, H = v.videoHeight;
   const MAX = 2560, sc = Math.min(1, MAX / Math.max(W, H));
   W = Math.max(2, Math.round(W * sc)); H = Math.max(2, Math.round(H * sc));
-  if (oq % 2 === 1) { const t = W; W = H; H = t; }
   const c = document.createElement("canvas"); c.width = W; c.height = H;
   const ctx = c.getContext("2d");
   if (!(window.LensGL && window.LensGL.renderCapture(ctx, W, H))) {
-    if (oq) { ctx.save(); ctx.translate(W / 2, H / 2); ctx.rotate(oq * Math.PI / 2); ctx.drawImage(v, -H / 2, -W / 2, H, W); ctx.restore(); }
-    else ctx.drawImage(v, 0, 0, W, H);
+    ctx.drawImage(v, 0, 0, W, H);
   }
   applyFilmSim(ctx, W, H, film);
   const rec = { rollId: F.rollId, frame, filmId: film.id, ts: Date.now(), ss: ssLabel(), ap: APS[state.apIdx], iso: state.iso, focal: state.focal, lens: state.lens, lensName: LENSES[state.lens].label, w: W, h: H };
@@ -1096,8 +1127,8 @@ function sndLock(open) {
 function updateFilmUI() {
   const F = filmState, film = F.id ? filmOf(F.id) : null;
   if (F.stage === "none") {
-    $("memo-film").textContent = "フィルム未装填";
-    $("memo-sub").textContent = "底蓋を開けてフィルムを入れてください";
+    $("memo-film").textContent = "空っぽです";
+    $("memo-sub").textContent = "フィルムは入っていません";
   } else if (F.stage === "blank") {
     $("memo-film").textContent = film.name + "（装填中）";
     $("memo-sub").textContent = "底蓋を閉めて、空シャッターをあと " + (2 - F.blanks) + " 回切ってください";
@@ -1111,13 +1142,15 @@ function updateFilmUI() {
     $("memo-sub").textContent = "現像室で見られます。取り出しは底蓋を開けて";
     $("counter").textContent = String(F.frames).padStart(3, "0");
   }
-  $("lock-cap").textContent = coverOpenFlag ? "底蓋ロック：OPEN" : "底蓋ロック：CLOSE";
+  $("lock-cap").textContent = coverOpenFlag ? "底蓋は開いています" : "底蓋は閉まっています（ロック中）";
+  $("lock-cap").classList.toggle("open", coverOpenFlag);
+  $("lock-help").textContent = coverOpenFlag ? "丸いキーを押すと、底蓋が閉まります" : "丸いキーを押すと、底蓋が開きます";
   $("btn-lock").classList.toggle("open", coverOpenFlag);
 }
 function renderChamber() {
   const F = filmState, inner = $("chamber-inner");
   if (F.stage === "none") {
-    inner.innerHTML = '<div class="chamber-empty">フィルム室は空です</div><button type="button" class="big-btn" id="btn-choose">フィルムを選ぶ</button>';
+    inner.innerHTML = '<div class="chamber-empty"><span class="ce-big">空っぽです</span><span class="ce-sub">フィルムは入っていません</span></div><button type="button" class="ghost-btn" id="btn-choose">フィルムを選ぶ</button>';
     $("btn-choose").addEventListener("click", () => { $("drawer").hidden = false; sndClick(); });
   } else {
     const film = filmOf(F.id);
@@ -1658,18 +1691,11 @@ const FS_FINISH = [
   /* ---- 向き：映像バッファを端末の向きに合わせて正す回転量（時計回り・90度単位） ---- */
   let curQ = 0;
   function orientQ() {
-    const v = $("v-m6");
-    const vw = v ? v.videoWidth : 0, vh = v ? v.videoHeight : 0;
-    if (!vw || !vh) return 0;
-    let a = 0;
-    if (window.screen && screen.orientation && typeof screen.orientation.angle === "number") a = screen.orientation.angle;
-    else if (typeof window.orientation === "number") a = window.orientation;
-    a = ((a % 360) + 360) % 360;
-    const bufLand = vw >= vh, devLand = (a === 90 || a === 270);
-    if (bufLand === devLand) return 0;
-    if (a === 90) return 1;
-    if (a === 270) return 3;
-    return 1;
+    /* 実機(iPhone)では、映像バッファそのものが端末の向きに追随し、中身は常に正立して届く。
+       一方で角度API（screen.orientation.angle）は「縦向きロック」時に 0 のまま止まり、
+       バッファと食い違う。v14 ではその食い違いから、横向き撮影の写真を回転させて壊した。
+       向きはバッファを正として、回転補正は一切しない（常に 0）。 */
+    return 0;
   }
   function drawCover(ctx, video, W, H, q) {
     const vw = video.videoWidth, vh = video.videoHeight;
