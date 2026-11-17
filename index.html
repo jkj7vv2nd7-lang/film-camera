@@ -227,7 +227,7 @@ body.mode-shoot #vf-barnack.show{flex:1;min-height:0}
 body.mode-shoot .b-win{height:auto}
 body.mode-shoot #shoot-ctl-wrap{flex:0 0 auto}
 body.mode-shoot #shoot-ctl-wrap .ctl{margin-top:10px}
-@media (orientation:landscape) and (max-height:600px){
+@media (orientation:landscape){
   body.mode-shoot #app{max-width:1020px}
   #mode-bar{padding:0 2px 6px}
   #mode-bar button{min-height:40px;padding:4px 16px}
@@ -258,6 +258,14 @@ body.mode-shoot #shoot-ctl-wrap .ctl{margin-top:10px}
 .lens-card.sel{background:linear-gradient(180deg,#5a2027,#3d1218);border-color:var(--red);color:#fff}
 .lens-card.sel .lc-trait,.lens-card.sel .lc-year{color:#f0b9be}
 .lens-card:active{transform:translateY(1px)}
+#focus-range{touch-action:none}
+.seg button{touch-action:manipulation;-webkit-tap-highlight-color:transparent;min-height:50px}
+html,body{overscroll-behavior:none}
+#lens-tips{margin-top:10px;border:1px solid #3c3c42;border-left:3px solid var(--amber);border-radius:8px;padding:10px 12px;background:#1d1d20}
+#lens-tips h3{margin:0 0 6px;font-size:.82rem;color:var(--amber);letter-spacing:.06em}
+#lens-tips dl{margin:0;display:grid;grid-template-columns:5.4em 1fr;gap:4px 8px;font-size:.8rem;line-height:1.55}
+#lens-tips dt{color:var(--dim)}
+#lens-tips dd{margin:0}
 #lens-desc{font-size:.8rem;color:#cfcfd4;line-height:1.65;margin-top:10px}
 #lens-desc .homage{font-size:.7rem;color:var(--dim)}
 </style>
@@ -354,6 +362,7 @@ body.mode-shoot #shoot-ctl-wrap .ctl{margin-top:10px}
       <h2>レンズ（名玉）</h2>
       <div id="lens-list"></div>
       <div id="lens-desc"></div>
+      <div id="lens-tips"></div>
     </div>
     <div class="ctl">
       <h2>絞り（仮想）</h2>
@@ -479,6 +488,7 @@ const LENSES = {
     swirl: 0.10, curve: 0.10, ring: 0.05, glow: 0.50, vig: 0.50, ca: 0.0028,
     lemon: 0.40, veil: 0.55,
     ghostMode: 4, ghostAmt: 0.30, tint: [1.02, 1.0, 0.97], contrast: 0.90, lift: 0.03, pastel: 0.15, sat: 0.94, cocMul: 1.05,
+    tips: { subj: "夕方の街並み、窓辺の人物、柔らかく残したいポートレート", ap: "開放〜f/2でグローとレモン型のボケ玉。輪郭を残したいときは f/2.8 まで絞ります", light: "逆光・夕日・窓明かりで、ベールとゴーストが最もよく出ます", focus: "人物は 1.5〜3m。0.7〜1m の近接では大きく溶けます" },
     desc: "<b>Wetzlar 50mm F1.4（1961）</b> ― 「貴婦人」と呼ばれた初代大口径標準レンズへのオマージュです。開放ではハイライトに柔らかいグローがかかりながら芯は残り、周辺の玉ボケはレモン型に少し潰れます（口径食）。逆光では画面全体に優しいベールがかかり、発色はクラシックで穏やかです。<br><span class='homage'>※実在の名玉への敬意を込めたオマージュ名称です。描写は癖の特徴をもとに再現したもので、実レンズの写りを保証するものではありません。深度は擬似的な推定（演出）です。</span>",
   },
   ural: {
@@ -487,6 +497,7 @@ const LENSES = {
     swirl: 1.15, curve: 0.18, ring: 0.0, glow: 0.38, vig: 0.62, ca: 0.0038,
     veil: 0.30,
     ghostMode: 1, ghostAmt: 0.5, tint: [0.965, 1.0, 1.065], contrast: 0.88, lift: 0.02, pastel: 0.0,
+    tips: { subj: "花の近接撮影、庭の草花。主題を中心に置く構図が似合います", ap: "開放でぐるぐる最大。f/2.8〜f/4 では水紋のような微かな渦に（ズマリット 50mm F1.5 が物差しです）", light: "木漏れ日や点光源の背景で、渦と虹のリングが回ります。逆光では薄いベールがかかります", focus: "花は 0.7〜1.5m に合わせ、背景を 3m 以上離すと渦がはっきり出ます" },
     desc: "<b>Ural 58mm F2.0（1968）</b> ― 冷戦期の東側で生まれた大口径標準レンズへのオマージュです。開放では周辺のボケが渦を巻く「ぐるぐるボケ」と、像面湾曲による周辺のピントのずれ、やや青みを帯びた発色が特徴。逆光では大きな円弧のハローと、虹色のリングゴーストが現れます。ぐるぐるの物差しはライカのズマリット 50mm F1.5で、開放では薄いベールをかけたようにふんわりしながら、ピントの合った芯はしっかり残ります。<br><span class='homage'>※実在の名玉への敬意を込めたオマージュ名称です。描写は癖の特徴をもとに再現したもので、実レンズの写りを保証するものではありません。深度は擬似的な推定（演出）です。</span>",
   },
   gorlitz: {
@@ -494,6 +505,7 @@ const LENSES = {
     stops: [2.8, 4.0, 5.6, 8.0],
     swirl: 0.02, curve: 0.05, ring: 0.85, glow: 0.24, vig: 0.42, ca: 0.002,
     ghostMode: 2, ghostAmt: 0.18, tint: [1.03, 1.0, 0.955], contrast: 0.82, lift: 0.05, pastel: 0.5,
+    tips: { subj: "離れた花や実、圧縮感のある街並み、遠くの被写体を大きく写したいとき", ap: "開放でシャボン玉ボケ。f/4〜f/5.6 で輪郭が締まります", light: "逆光の点光源でリングゴーストとシャボンボケ。順光ではパステルの柔らかさが出ます", focus: "3〜10m が本領。遠景は ∞ で、周辺まで均一に柔らかく" },
     desc: "<b>Gorlitz 100mm F2.8（1950）</b> ― 戦後まもないドイツの3枚玉（トリプレット）中望遠へのオマージュです。玉ボケの輪郭だけが明るく残る「シャボン玉ボケ」が代名詞。ハイライトはパステル調ににじみ、コントラストは低めで、全体に柔らかく夢見るような写りになります。ゴーストは控えめです。<br><span class='homage'>※実在の名玉への敬意を込めたオマージュ名称です。描写は癖の特徴をもとに再現したもので、実レンズの写りを保証するものではありません。深度は擬似的な推定（演出）です。</span>",
   },
   tokyo: {
@@ -502,6 +514,7 @@ const LENSES = {
     swirl: 0.06, curve: 0.08, ring: 0.10, glow: 0.30, vig: 0.45, ca: 0.0030,
     starburst: 0.8,
     ghostMode: 3, ghostAmt: 0.55, tint: [1.06, 1.0, 0.90], contrast: 0.92, lift: 0.02, pastel: 0.05, sat: 1.05, cocMul: 0.95,
+    tips: { subj: "夜景、イルミネーション、点光源の多い風景", ap: "開放〜f/2.8 で6本の光芒と虹ゴーストの連鎖。f/4 からは光芒が細く整います", light: "点光源が多い場所ほど個性全開。逆光の太陽でも連鎖ゴーストが出ます", focus: "夜景は ∞。近くの灯りは 3〜5m で光芒が大きくなります" },
     desc: "<b>Tokyo 55mm F1.8（1965）</b> ― 1960年代の国産大衆標準レンズへのオマージュです。硝材由来とされるアンバー寄りの温かい色づきが特徴で、逆光では対角線上に虹色のゴーストが7〜8個連なります。絞ると点光源に光芒（6本のすじ）が出ます。<br><span class='homage'>※実在の名玉への敬意を込めたオマージュ名称です。描写は癖の特徴をもとに再現したもので、実レンズの写りを保証するものではありません。深度は擬似的な推定（演出）です。</span>",
   },
   jena: {
@@ -509,6 +522,7 @@ const LENSES = {
     stops: [1.4, 2.0, 2.8, 4.0, 5.6, 8.0],
     swirl: 0.03, curve: 0.04, ring: 0.05, glow: 0.16, vig: 0.38, ca: 0.0012,
     ghostMode: 5, ghostAmt: 0.22, tint: [0.99, 1.0, 1.03], contrast: 1.04, lift: -0.02, pastel: 0.0, sat: 1.16, cocMul: 1.10, cocPow: 1.35,
+    tips: { subj: "建築、質感を残したい静物、きりっとした街並み", ap: "開放は周辺が締まる描写。f/2〜f/2.8 で芯のキレが際立ちます", light: "順光や斜めの光でコントラストが冴えます。逆光のゴーストは控えめです", focus: "1〜5m で深度の切れ味を。1段ずつ絞って、変わり方を楽しんでください" },
     desc: "<b>Jena 50mm F1.4（1973）</b> ― 高性能コーティングで知られるプラナー型大口径へのオマージュです。マイクロコントラストが高く、被写体の質感と立体感が際立ちます。F1.4では繊細な滲みが残りますが、F2.8から鋭く締まります。青と赤は深く、黒は引き締まって沈みます。ゴーストはごく淡く抑えられています。<br><span class='homage'>※実在の名玉への敬意を込めたオマージュ名称です。描写は癖の特徴をもとに再現したもので、実レンズの写りを保証するものではありません。深度は擬似的な推定（演出）です。</span>",
   },
   noct: {
@@ -516,6 +530,7 @@ const LENSES = {
     stops: [0.95, 1.4, 2.0, 2.8, 4.0, 5.6],
     swirl: 0.30, curve: 0.22, ring: 0.05, glow: 0.55, vig: 0.88, ca: 0.0042,
     ghostMode: 0, ghostAmt: 0.0, tint: [1.0, 0.99, 1.01], contrast: 0.97, lift: -0.03, pastel: 0.10, sat: 1.02, cocMul: 1.50, cocPow: 0.90,
+    tips: { subj: "夜の街、バーの灯り、キャンドルのある室内", ap: "開放が主役です。f/1.4〜f/2 で周辺減光が和らぎ、実用的になります", light: "暗い場所の点光源で大きなボケ玉と強い周辺減光。夜の空気そのものが写ります", focus: "1〜2m の人物・静物。ピントは薄いので、スライダーは小刻みに動かしてください" },
     desc: "<b>Wetzlar 50mm F0.95（1975）</b> ― 夜の光を集める超大口径レンズへのオマージュです。被写界深度は極端に浅く、周辺は大きく減光します。ハイライトは幻想的に滲み、シャドウは漆黒に沈む、夜のための写りです。<br><span class='homage'>※実在の名玉への敬意を込めたオマージュ名称です。描写は癖の特徴をもとに再現したもので、実レンズの写りを保証するものではありません。深度は擬似的な推定（演出）です。</span>",
   },
 };
@@ -703,10 +718,27 @@ $("btn-shutter").addEventListener("click", fire);
 
 /* ================= セグメント類 ================= */
 function segWire(rowId, attr, fn) {
-  $(rowId).addEventListener("click", e => {
-    const b = e.target.closest("button"); if (!b) return;
-    fn(b.dataset[attr], b);
+  const row = $(rowId);
+  let lastAt = 0, lastVal = null, downPos = null;
+  const handle = b => {
+    const val = b.dataset[attr], now = performance.now();
+    if (val === lastVal && now - lastAt < 600) return; /* 同じタップの二重発火を防ぐ */
+    lastAt = now; lastVal = val;
+    fn(val, b);
     sndClick();
+  };
+  row.addEventListener("pointerdown", e => { downPos = { x: e.clientX, y: e.clientY }; });
+  row.addEventListener("pointerup", e => {
+    if (!downPos) return;
+    const moved = Math.hypot(e.clientX - downPos.x, e.clientY - downPos.y);
+    downPos = null;
+    if (moved > 10) return; /* スクロールの指離しは選択にしない */
+    const b = e.target.closest("button"); if (!b || !row.contains(b)) return;
+    handle(b);
+  });
+  row.addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b || !row.contains(b)) return;
+    handle(b);
   });
 }
 function segSelect(rowId, attr, val) {
@@ -752,6 +784,8 @@ function renderFocus() {
   $("v-br-ghost").style.transform = `translateX(${dx * 0.6}px)`;
 }
 $("focus-range").addEventListener("input", e => { state.focusIdx = Number(e.target.value); renderFocus(); save(); });
+/* スライダー操作中に画面が流れないのは CSS の touch-action:none（#focus-range）が担う。
+   window 側で touchmove を止めるとスライダー自身のドラッグまで止まるため、ここでは何もしない */
 
 /* ================= カメラと測光 ================= */
 const sample = document.createElement("canvas"); sample.width = 32; sample.height = 18;
@@ -850,6 +884,7 @@ function setUiMode(m) {
   $("settings-screen").hidden = m !== "settings";
   $("btn-to-settings").hidden = m !== "shoot";
   $("btn-to-shoot").hidden = m !== "settings";
+  if (m === "shoot") { segSelect("ap-row", "ap", state.apIdx); segSelect("iso-row", "iso", state.iso); }
   window.scrollTo(0, 0);
 }
 $("btn-to-settings").addEventListener("click", () => setUiMode("settings"));
@@ -1036,12 +1071,17 @@ function capturePhoto() {
   if (!state.camOk) { hint("カメラが起動していないため、この1枚は保存されませんでした"); return; }
   const v = $("v-m6");
   if (!v.videoWidth) return;
+  const oq = (window.LensGL && window.LensGL.orientQ) ? window.LensGL.orientQ() : 0;
   let W = v.videoWidth, H = v.videoHeight;
   const MAX = 2560, sc = Math.min(1, MAX / Math.max(W, H));
   W = Math.max(2, Math.round(W * sc)); H = Math.max(2, Math.round(H * sc));
+  if (oq % 2 === 1) { const t = W; W = H; H = t; }
   const c = document.createElement("canvas"); c.width = W; c.height = H;
   const ctx = c.getContext("2d");
-  if (!(window.LensGL && window.LensGL.renderCapture(ctx, W, H))) ctx.drawImage(v, 0, 0, W, H);
+  if (!(window.LensGL && window.LensGL.renderCapture(ctx, W, H))) {
+    if (oq) { ctx.save(); ctx.translate(W / 2, H / 2); ctx.rotate(oq * Math.PI / 2); ctx.drawImage(v, -H / 2, -W / 2, H, W); ctx.restore(); }
+    else ctx.drawImage(v, 0, 0, W, H);
+  }
   applyFilmSim(ctx, W, H, film);
   const rec = { rollId: F.rollId, frame, filmId: film.id, ts: Date.now(), ss: ssLabel(), ap: APS[state.apIdx], iso: state.iso, focal: state.focal, lens: state.lens, lensName: LENSES[state.lens].label, w: W, h: H };
   c.toBlob(async blob => { if (blob) { rec.blob = blob; try { await PhotoDB.add(rec); } catch (e) {} } }, "image/jpeg", 0.92);
@@ -1339,7 +1379,7 @@ const LensGL = (() => {
   setLens(LENSES[state.lens] ? state.lens : "lux");
   let gl = null;
   try { gl = view.getContext("webgl", { preserveDrawingBuffer: true, antialias: false }); } catch (e) {}
-  const api = { ready: false, frames: 0, setLens, params: lensParams, renderCapture, sun: { x: 0.5, y: 0.4, strength: 0 } };
+  const api = { ready: false, frames: 0, setLens, params: lensParams, renderCapture, orientQ, sun: { x: 0.5, y: 0.4, strength: 0 } };
   if (!gl) { view.remove(); if (bvCopy) bvCopy.remove(); return api; }
 
   const VS = "attribute vec2 p; varying vec2 vUv; void main(){ vUv = p * 0.5 + 0.5; gl_Position = vec4(p, 0.0, 1.0); }";
@@ -1603,7 +1643,11 @@ const FS_FINISH = [
     gl.uniform1f(gl.getUniformLocation(progFinish, "uStarburst"), P.starburst);
     gl.uniform1f(gl.getUniformLocation(progFinish, "uSat"), P.sat);
     gl.uniform3f(gl.getUniformLocation(progFinish, "uTint"), P.tint[0], P.tint[1], P.tint[2]);
-    gl.uniform3f(gl.getUniformLocation(progFinish, "uSun"), api.sun.x, 1 - api.sun.y, api.sun.strength);
+    let sunX = api.sun.x, sunY = api.sun.y;
+    if (curQ === 1) { const t = sunX; sunX = 1 - sunY; sunY = t; }
+    else if (curQ === 2) { sunX = 1 - sunX; sunY = 1 - sunY; }
+    else if (curQ === 3) { const t = sunX; sunX = sunY; sunY = 1 - t; }
+    gl.uniform3f(gl.getUniformLocation(progFinish, "uSun"), sunX, 1 - sunY, api.sun.strength);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
   /* ---- ソース（映像→カラー／深度） ---- */
@@ -1611,14 +1655,40 @@ const FS_FINISH = [
   const depthC = document.createElement("canvas");
   const detectC = document.createElement("canvas"); detectC.width = 64; detectC.height = 48;
   const detectCtx = detectC.getContext("2d", { willReadFrequently: true });
-  function drawCover(ctx, video, W, H) {
+  /* ---- 向き：映像バッファを端末の向きに合わせて正す回転量（時計回り・90度単位） ---- */
+  let curQ = 0;
+  function orientQ() {
+    const v = $("v-m6");
+    const vw = v ? v.videoWidth : 0, vh = v ? v.videoHeight : 0;
+    if (!vw || !vh) return 0;
+    let a = 0;
+    if (window.screen && screen.orientation && typeof screen.orientation.angle === "number") a = screen.orientation.angle;
+    else if (typeof window.orientation === "number") a = window.orientation;
+    a = ((a % 360) + 360) % 360;
+    const bufLand = vw >= vh, devLand = (a === 90 || a === 270);
+    if (bufLand === devLand) return 0;
+    if (a === 90) return 1;
+    if (a === 270) return 3;
+    return 1;
+  }
+  function drawCover(ctx, video, W, H, q) {
     const vw = video.videoWidth, vh = video.videoHeight;
     if (!vw || !vh) return false;
-    const va = vw / vh, ta = W / H;
-    let sw, sh, sx, sy;
-    if (va > ta) { sh = vh; sw = vh * ta; sx = (vw - sw) / 2; sy = 0; }
-    else { sw = vw; sh = vw / ta; sx = 0; sy = (vh - sh) / 2; }
-    ctx.drawImage(video, sx, sy, sw, sh, 0, 0, W, H);
+    if (!q) {
+      const va = vw / vh, ta = W / H;
+      let sw, sh, sx, sy;
+      if (va > ta) { sh = vh; sw = vh * ta; sx = (vw - sw) / 2; sy = 0; }
+      else { sw = vw; sh = vw / ta; sx = 0; sy = (vh - sh) / 2; }
+      ctx.drawImage(video, sx, sy, sw, sh, 0, 0, W, H);
+      return true;
+    }
+    const ew = (q % 2 === 1) ? vh : vw, eh = (q % 2 === 1) ? vw : vh;
+    const s = Math.max(W / ew, H / eh);
+    ctx.save();
+    ctx.translate(W / 2, H / 2);
+    ctx.rotate(q * Math.PI / 2);
+    ctx.drawImage(video, -vw * s / 2, -vh * s / 2, vw * s, vh * s);
+    ctx.restore();
     return true;
   }
   function paintDepth(ctx, W, H) {
@@ -1639,7 +1709,8 @@ const FS_FINISH = [
   function upload(w, h) {
     const v = $("v-m6");
     colorC.width = w; colorC.height = h;
-    if (!drawCover(colorC.getContext("2d"), v, w, h)) return false;
+    curQ = orientQ();
+    if (!drawCover(colorC.getContext("2d"), v, w, h, curQ)) return false;
     depthC.width = Math.max(2, w >> 1); depthC.height = Math.max(2, h >> 1);
     paintDepth(depthC.getContext("2d"), depthC.width, depthC.height);
     gl.bindTexture(gl.TEXTURE_2D, texColor);
@@ -1729,6 +1800,12 @@ const FS_FINISH = [
     applyFocal();
     $("lens-name").textContent = LENSES[id].label;
     $("lens-desc").innerHTML = LENSES[id].desc;
+    const T = LENSES[id].tips;
+    $("lens-tips").innerHTML = "<h3>撮り方のコツ</h3><dl>"
+      + "<dt>向く被写体</dt><dd>" + T.subj + "</dd>"
+      + "<dt>絞りの目安</dt><dd>" + T.ap + "</dd>"
+      + "<dt>個性の出る光</dt><dd>" + T.light + "</dd>"
+      + "<dt>ピントの目安</dt><dd>" + T.focus + "</dd></dl>";
     for (const b of $("lens-list").querySelectorAll(".lens-card")) b.classList.toggle("sel", b.dataset.lens === id);
     save();
   }
