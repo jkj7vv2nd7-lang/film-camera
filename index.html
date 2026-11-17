@@ -241,20 +241,22 @@ body.mode-shoot #shoot-ctl-wrap .ctl{margin-top:10px}
   body.mode-shoot{padding:6px 10px calc(6px + env(safe-area-inset-bottom))}
   #mode-bar button{min-height:36px}
   body.mode-shoot #finder-area{grid-column:1;grid-row:1 / span 4;min-height:0;align-self:stretch}
-  body.mode-shoot .top-plate{grid-column:2;grid-row:1;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-content:start;margin:0;padding:6px 10px}
+  body.mode-shoot .top-plate{grid-column:2;grid-row:1;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 10px;align-content:start;margin:0;padding:6px 10px}
   body.mode-shoot .brand{grid-column:1 / -1;grid-row:1;padding:0;min-width:0;text-align:left}
   body.mode-shoot .brand .name{font-size:1.12rem}
   body.mode-shoot .brand .sub,body.mode-shoot .brand .engrave{display:none}
   body.mode-shoot #shoot-status{display:block}
   body.mode-shoot #lens-name{margin-top:2px}
   body.mode-shoot .dial-col{grid-column:1;grid-row:2;width:auto;justify-self:start}
-  body.mode-shoot #dial{width:56px;height:56px}
+  /* ダイヤルの目盛りは92px前提の固定配置なので、縮小は変形（scale）で行い、目盛りごと比例させる */
+  body.mode-shoot #dial{transform:scale(.65);margin:-16px auto}
   body.mode-shoot .dial-label{display:none}
   body.mode-shoot #ss-read{font-size:1rem;min-height:1.25em}
   body.mode-shoot .wind-col,body.mode-shoot .wind-row{display:contents}
-  body.mode-shoot #btn-shutter{grid-column:2;grid-row:2;align-self:center;justify-self:end;width:56px;height:56px}
-  body.mode-shoot #btn-wind{grid-column:1;grid-row:3;justify-self:start;margin-left:6px}
-  body.mode-shoot #counter{grid-column:2;grid-row:3;align-self:center;min-width:64px;text-align:center}
+  body.mode-shoot #btn-shutter{grid-column:3;grid-row:2;align-self:center;justify-self:end;width:56px;height:56px}
+  /* 巻き上げレバーはカウンターと同軸でシャッターボタンの隣、という実機の組み方に寄せる */
+  body.mode-shoot #btn-wind{grid-column:2;grid-row:2;justify-self:end;align-self:center}
+  body.mode-shoot #counter{grid-column:2 / -1;grid-row:3;justify-self:end;align-self:center;min-width:64px;text-align:center}
   body.mode-shoot .wind-label{display:none}
   body.mode-shoot #charge-state{grid-column:1 / -1;grid-row:4;font-size:.68rem;text-align:left}
   body.mode-shoot #shoot-ctl-wrap{grid-column:2;grid-row:2}
@@ -273,12 +275,12 @@ body.mode-shoot #shoot-ctl-wrap .ctl{margin-top:10px}
   #mode-bar{padding:0 2px 4px}
   #mode-bar button{min-height:34px}
   body.mode-shoot #shoot-screen{gap:5px 10px}
-  body.mode-shoot .top-plate{padding:5px 10px;gap:1px 10px}
+  body.mode-shoot .top-plate{padding:5px 10px;gap:3px 10px}
   body.mode-shoot .brand .name{font-size:1.02rem}
   body.mode-shoot #lens-name{margin-top:1px;font-size:.64rem}
   body.mode-shoot #shoot-status{margin-top:0;font-size:.64rem}
   body.mode-shoot .dial-col{display:flex;align-items:center;gap:8px}
-  body.mode-shoot #dial{width:52px;height:52px}
+  body.mode-shoot #dial{transform:scale(.58);margin:-19px}
   body.mode-shoot #ss-read{font-size:.95rem;margin:0}
   body.mode-shoot #btn-shutter{width:52px;height:52px}
   body.mode-shoot #btn-wind{height:36px}
@@ -289,7 +291,7 @@ body.mode-shoot #shoot-ctl-wrap .ctl{margin-top:10px}
   body.mode-shoot #focus-range{height:26px}
 }
 @media (orientation:landscape) and (max-height:380px){
-  body.mode-shoot #dial{width:48px;height:48px}
+  body.mode-shoot #dial{transform:scale(.53);margin:-22px}
   body.mode-shoot #btn-shutter{width:48px;height:48px}
   body.mode-shoot #shoot-ctl-wrap .seg button{min-height:32px;font-size:.8rem}
   body.mode-shoot #focus-range{height:24px}
